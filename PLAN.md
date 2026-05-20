@@ -4,7 +4,7 @@
 In a monorepo, AI coding rules for tools like Cursor, Claude Code, and GitHub Copilot often exist at the root but are never wired into individual packages. This causes AI agents to generate code without the correct context or standards applied.
 
 ## Solution
-A CLI tool called Valiant (`val`) that discovers monorepo structure, validates rule coverage across packages, and installs rules into each package automatically.
+A CLI tool called Valiant (`val`) that discovers monorepo structure, checks rule coverage across packages, and installs rules into each package automatically.
 
 ## Tech Stack
 - Language: Go
@@ -13,7 +13,7 @@ A CLI tool called Valiant (`val`) that discovers monorepo structure, validates r
 
 ## Commands
 - `val init` — initialise Valiant in a monorepo, create `valiant.yaml`, detect monorepo structure
-- `val validate` — health check across all packages, report rule coverage, flag conflicts. CI-compatible exit codes
+- `val check` — health check across all packages, report rule coverage, flag conflicts. CI-compatible exit codes
 - `val install` — apply root rules into each package, generating correct config files per detected AI tool. Supports `--dry-run`
 
 ## Phases
@@ -42,7 +42,7 @@ A CLI tool called Valiant (`val`) that discovers monorepo structure, validates r
 - `--dry-run` flag to preview changes before applying
 
 ### Phase 5 — Validation Report
-- `val validate` outputs structured health check
+- `val check` outputs structured health check
 - Shows rule coverage per package
 - Flags missing or conflicting rules
 
