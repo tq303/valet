@@ -1,4 +1,4 @@
-# Valiant
+# Valet
 
 See PLAN.md for the full project plan and MVP scope.
 

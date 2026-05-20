@@ -1,6 +1,6 @@
 package main
 
-import "github.com/blancoio/valiant/cmd"
+import "github.com/tq303/val/cmd"
 
 func main() {
 	cmd.Execute()

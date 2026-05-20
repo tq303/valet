@@ -8,8 +8,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "val",
-	Short: "Valiant — AI rule coverage for monorepos",
-	Long:  "Valiant discovers your monorepo structure, validates AI rule coverage across packages, and installs rules into each package automatically.",
+	Short: "Valet — AI rule coverage for monorepos",
+	Long:  "Valet discovers your monorepo structure, validates AI rule coverage across packages, and installs rules into each package automatically.",
 }
 
 func Execute() {
