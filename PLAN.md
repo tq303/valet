@@ -28,18 +28,13 @@ A CLI tool called Valet (`val`) that discovers monorepo structure, checks rule c
 - Handle both glob patterns and explicit paths
 - Build internal package map: name, path, detected tooling
 
-### Phase 3 — Rule Scanning
-- Scan configurable rules folder (default `.rules`)
-- If no `.rules` folder exists, create it and prompt the user to add rules
-- Detect rule file formats:
-  - `.mdc` — Cursor
-  - `CLAUDE.md` — Claude Code
-  - `.github/copilot-instructions.md` — GitHub Copilot
-- Validate files are parseable and non-empty
-
-### Future (Priority) — Interactive Rule Selection
-- If no `.rules` folder, interactively prompt the user to select a folder and choose which rule files to include
-- Requires an interactive prompt library (e.g. bubbletea)
+### Phase 3 — Rule Scanning & Selection
+- Scan `.rules` folder for `.md` files (tool-agnostic rule content)
+- If no `.rules` folder exists, create it and tell the user to add rules
+- Interactively prompt the user to select which rules to include
+- For each selected rule, prompt which tools it applies to (Claude Code, Cursor)
+- Write selections into `valet.yaml`
+- Requires an interactive prompt library (e.g. huh)
 
 ### Phase 4 — Install Logic
 - For each discovered package, generate appropriate config files based on detected tools

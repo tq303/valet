@@ -7,13 +7,18 @@ const (
 	ToolCursor Tool = "cursor"
 )
 
+type Rule struct {
+	File  string `yaml:"file"`
+	Tools []Tool `yaml:"tools"`
+}
+
 type Package struct {
-	Path    string   `yaml:"path"`
-	Context string   `yaml:"context"`
-	Tools   []Tool   `yaml:"tools"`
+	Path    string `yaml:"path"`
+	Context string `yaml:"context,omitempty"`
 }
 
 type Config struct {
-	Version  string    `yaml:"version"`
+	Version  int       `yaml:"version"`
+	Rules    []Rule    `yaml:"rules"`
 	Packages []Package `yaml:"packages"`
 }
