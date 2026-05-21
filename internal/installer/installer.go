@@ -23,6 +23,10 @@ func IsURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
 
+func IsFolder(s string) bool {
+	return strings.HasSuffix(s, "/")
+}
+
 // FileName returns the base filename for a local path or URL.
 func FileName(file string) string {
 	if IsURL(file) {
@@ -41,8 +45,14 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([
 		if !IsURL(file) {
 			src := ResolvePath(root, file)
 			if _, err := os.Stat(src); err != nil {
-				if err := touchFile(src); err != nil {
-					return nil, fmt.Errorf("could not create %s: %w", file, err)
+				if IsFolder(file) {
+					if err := os.MkdirAll(src, 0755); err != nil {
+						return nil, fmt.Errorf("could not create %s: %w", file, err)
+					}
+				} else {
+					if err := touchFile(src); err != nil {
+						return nil, fmt.Errorf("could not create %s: %w", file, err)
+					}
 				}
 			}
 		}

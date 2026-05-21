@@ -63,6 +63,13 @@ rules:
 - Works for any file type — skills, dotfiles, CI templates, editor config, etc.
 - Claude Code skills just need to land in `.claude/` — no special install step
 
+### Phase 6 — Repo Sources
+- Rules can declare a `repo:` git URL alongside `files:`
+- `valet sync` clones the repo into `~/.cache/valet/<repo-hash>/` on first run, pulls on subsequent runs
+- Files and folders (trailing slash) are resolved from the cached repo, preserving full directory structure
+- Internal relative links within skill folders work because the whole repo is available
+- `valet add <git-url>` starts the add flow with `repo:` pre-filled
+
 ## Non-Goals (MVP)
 - No monorepo auto-detection
 - No preset system (use `valet.yaml` directly)
