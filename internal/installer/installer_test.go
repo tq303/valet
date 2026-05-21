@@ -17,9 +17,8 @@ func setup(t *testing.T) (root string, rule config.Rule) {
 	os.MkdirAll(filepath.Join(root, "packages/api"), 0755)
 
 	rule = config.Rule{
-		File: "shared.md",
-		Name: "shared.md",
-		Packages: []config.RulePackage{
+		Files: []string{"shared.md"},
+		Locations: []config.Location{
 			{Path: "packages/auth"},
 			{Path: "packages/api"},
 		},
@@ -27,10 +26,10 @@ func setup(t *testing.T) (root string, rule config.Rule) {
 	return
 }
 
-func TestInstallFileCopies(t *testing.T) {
+func TestSyncRuleCopies(t *testing.T) {
 	root, rule := setup(t)
-	pkgs := []string{"packages/auth", "packages/api"}
-	results, err := InstallFile(root, rule, pkgs, false)
+	locs := []string{"packages/auth", "packages/api"}
+	results, err := SyncRule(root, rule, locs, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -44,9 +43,9 @@ func TestInstallFileCopies(t *testing.T) {
 	}
 }
 
-func TestInstallFileDryRun(t *testing.T) {
+func TestSyncRuleDryRun(t *testing.T) {
 	root, rule := setup(t)
-	results, err := InstallFile(root, rule, []string{"packages/auth"}, true)
+	results, err := SyncRule(root, rule, []string{"packages/auth"}, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -55,22 +54,22 @@ func TestInstallFileDryRun(t *testing.T) {
 	}
 }
 
-func TestInstallFileMissingSource(t *testing.T) {
+func TestSyncRuleMissingSource(t *testing.T) {
 	root := t.TempDir()
-	rule := config.Rule{File: "nonexistent.md", Name: "nonexistent.md"}
-	_, err := InstallFile(root, rule, []string{"."}, false)
+	rule := config.Rule{Files: []string{"nonexistent.md"}}
+	_, err := SyncRule(root, rule, []string{"."}, false)
 	if err == nil {
 		t.Error("expected error for missing source file")
 	}
 }
 
-func TestInstallAll(t *testing.T) {
+func TestSyncAll(t *testing.T) {
 	root, rule := setup(t)
 	cfg := &config.Config{
 		Version: 1,
 		Rules:   []config.Rule{rule},
 	}
-	results, err := InstallAll(root, cfg, false)
+	results, err := SyncAll(root, cfg, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

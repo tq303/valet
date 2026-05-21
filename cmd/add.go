@@ -62,7 +62,7 @@ var addCmd = &cobra.Command{
 				if filepath.Base(f) == filename {
 					// File already tracked — show packages that don't have it yet
 					existing := map[string]bool{}
-					for _, rp := range rule.Packages {
+					for _, rp := range rule.Locations {
 						existing[rp.Path] = true
 					}
 
@@ -71,42 +71,42 @@ var addCmd = &cobra.Command{
 						return err
 					}
 
-					var pkgOptions []huh.Option[string]
+					var locOptions []huh.Option[string]
 					for _, p := range allPkgs {
 						if !existing[p.Path] {
-							pkgOptions = append(pkgOptions, huh.NewOption(p.Path, p.Path))
+							locOptions = append(locOptions, huh.NewOption(p.Path, p.Path))
 						}
 					}
 
-					if len(pkgOptions) == 0 {
+					if len(locOptions) == 0 {
 						fmt.Printf("%s is already tracked for all packages.\n", filename)
 						return nil
 					}
 
-					var selectedPkgs []string
+					var selectedLocs []string
 					if err := huh.NewForm(
 						huh.NewGroup(
 							huh.NewMultiSelect[string]().
 								Title(fmt.Sprintf("Add %s to which packages?", filename)).
-								Options(pkgOptions...).
-								Value(&selectedPkgs),
+								Options(locOptions...).
+								Value(&selectedLocs),
 						),
 					).Run(); err != nil {
 						return err
 					}
 
-					if len(selectedPkgs) == 0 {
+					if len(selectedLocs) == 0 {
 						fmt.Println("No packages selected, nothing to do.")
 						return nil
 					}
 
-					for _, p := range selectedPkgs {
-						cfg.Rules[i].Packages = append(cfg.Rules[i].Packages, config.RulePackage{Path: p})
+					for _, p := range selectedLocs {
+						cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, config.Location{Path: p})
 					}
 					if err := config.Save(root, cfg); err != nil {
 						return err
 					}
-					results, err := installer.SyncRule(root, cfg.Rules[i], selectedPkgs, false)
+					results, err := installer.SyncRule(root, cfg.Rules[i], selectedLocs, false)
 					if err != nil {
 						return err
 					}
@@ -125,20 +125,20 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		var pkgOptions []huh.Option[string]
+		var locOptions []huh.Option[string]
 		for _, p := range packages {
-			pkgOptions = append(pkgOptions, huh.NewOption(p.Path, p.Path))
+			locOptions = append(locOptions, huh.NewOption(p.Path, p.Path))
 		}
 
-		var selectedPkgs []string
+		var selectedLocs []string
 		var dest string
 
 		if err := huh.NewForm(
 			huh.NewGroup(
 				huh.NewMultiSelect[string]().
 					Title("Which packages should this apply to?").
-					Options(pkgOptions...).
-					Value(&selectedPkgs),
+					Options(locOptions...).
+					Value(&selectedLocs),
 				huh.NewInput().
 					Title("Destination folder in each package (leave blank for root)").
 					Placeholder(".claude").
@@ -148,24 +148,24 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		if len(selectedPkgs) == 0 {
+		if len(selectedLocs) == 0 {
 			fmt.Println("No packages selected, nothing to do.")
 			return nil
 		}
 
-		var rulePkgs []config.RulePackage
-		for _, p := range selectedPkgs {
-			rulePkgs = append(rulePkgs, config.RulePackage{Path: p})
+		var locs []config.Location
+		for _, p := range selectedLocs {
+			locs = append(locs, config.Location{Path: p})
 		}
 
 		// Find an existing rule with the same dest and packages to group into
 		for i, rule := range cfg.Rules {
-			if rule.Dest == dest && samePackages(rule.Packages, rulePkgs) {
+			if rule.Dest == dest && samePackages(rule.Locations, locs) {
 				cfg.Rules[i].Files = append(cfg.Rules[i].Files, filename)
 				if err := config.Save(root, cfg); err != nil {
 					return err
 				}
-				results, err := installer.SyncRule(root, cfg.Rules[i], selectedPkgs, false)
+				results, err := installer.SyncRule(root, cfg.Rules[i], selectedLocs, false)
 				if err != nil {
 					return err
 				}
@@ -181,14 +181,14 @@ var addCmd = &cobra.Command{
 		rule := config.Rule{
 			Dest:     dest,
 			Files:    []string{filename},
-			Packages: rulePkgs,
+			Locations: locs,
 		}
 		cfg.Rules = append(cfg.Rules, rule)
 		if err := config.Save(root, cfg); err != nil {
 			return err
 		}
 
-		results, err := installer.SyncRule(root, rule, selectedPkgs, false)
+		results, err := installer.SyncRule(root, rule, selectedLocs, false)
 		if err != nil {
 			return err
 		}
@@ -200,7 +200,7 @@ var addCmd = &cobra.Command{
 	},
 }
 
-func samePackages(a, b []config.RulePackage) bool {
+func samePackages(a, b []config.Location) bool {
 	if len(a) != len(b) {
 		return false
 	}

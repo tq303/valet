@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/tq303/val/internal/config"
 )
@@ -15,51 +16,102 @@ type Result struct {
 	Dest    string
 }
 
-// SyncRule copies all files in a rule into the given packages.
-func SyncRule(root string, rule config.Rule, packages []string, dryRun bool) ([]Result, error) {
+// SyncRule syncs all files in a rule into the given locations.
+func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([]Result, error) {
 	var results []Result
 	for _, file := range rule.Files {
-		src := file
-		if !filepath.IsAbs(src) {
-			src = filepath.Join(root, src)
-		}
+		src := resolvePath(root, file)
 		if _, err := os.Stat(src); err != nil {
-			return nil, fmt.Errorf("source file not found: %s", file)
+			return nil, fmt.Errorf("source not found: %s", file)
 		}
 
-		for _, pkg := range packages {
-			destDir := pkg
+		for _, loc := range locations {
+			destDir := resolvePath(root, loc)
 			if rule.Dest != "" {
-				destDir = filepath.Join(pkg, rule.Dest)
+				destDir = filepath.Join(destDir, rule.Dest)
 			}
-			dest := filepath.Join(root, destDir, filepath.Base(file))
-			results = append(results, Result{Package: pkg, File: file, Dest: dest})
+			dest := filepath.Join(destDir, filepath.Base(file))
+			results = append(results, Result{Package: loc, File: file, Dest: dest})
 			if dryRun {
 				continue
 			}
-			if err := copyFile(src, dest); err != nil {
-				return nil, fmt.Errorf("failed to sync %s into %s: %w", file, pkg, err)
+			if rule.Link {
+				if err := symlink(src, dest); err != nil {
+					return nil, fmt.Errorf("failed to symlink %s to %s: %w", file, dest, err)
+				}
+			} else {
+				if err := copyAny(src, dest); err != nil {
+					return nil, fmt.Errorf("failed to sync %s to %s: %w", file, dest, err)
+				}
 			}
 		}
 	}
 	return results, nil
 }
 
-// SyncAll applies every rule in cfg to its own package list.
+// SyncAll applies every rule in cfg to its own location list.
 func SyncAll(root string, cfg *config.Config, dryRun bool) ([]Result, error) {
 	var all []Result
 	for _, rule := range cfg.Rules {
-		pkgs := make([]string, len(rule.Packages))
-		for i, p := range rule.Packages {
-			pkgs[i] = p.Path
+		locs := make([]string, len(rule.Locations))
+		for i, l := range rule.Locations {
+			locs[i] = l.Path
 		}
-		results, err := SyncRule(root, rule, pkgs, dryRun)
+		results, err := SyncRule(root, rule, locs, dryRun)
 		if err != nil {
 			return nil, err
 		}
 		all = append(all, results...)
 	}
 	return all, nil
+}
+
+// resolvePath expands ~/ and resolves relative paths against root.
+func resolvePath(root, path string) string {
+	if strings.HasPrefix(path, "~/") {
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, path[2:])
+	}
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(root, path)
+}
+
+func symlink(src, dest string) error {
+	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		return err
+	}
+	// Remove existing file/symlink/dir at dest
+	os.Remove(dest)
+	return os.Symlink(src, dest)
+}
+
+func copyAny(src, dest string) error {
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return copyDir(src, dest)
+	}
+	return copyFile(src, dest)
+}
+
+func copyDir(src, dest string) error {
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		if err := copyAny(filepath.Join(src, e.Name()), filepath.Join(dest, e.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func copyFile(src, dest string) error {

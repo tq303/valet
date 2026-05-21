@@ -24,17 +24,16 @@ func TestSaveAndLoad(t *testing.T) {
 		Version: 1,
 		Rules: []Rule{
 			{
-				File: ".eslintrc.js",
-				Name: ".eslintrc.js",
-				Packages: []RulePackage{
+				Files: []string{".eslintrc.js"},
+				Locations: []Location{
 					{Path: "."},
 					{Path: "packages/auth"},
 				},
 			},
 			{
-				File: ".rules/.claude/auth.md",
-				Name: "auth.md",
-				Packages: []RulePackage{
+				Dest:  ".claude",
+				Files: []string{"CLAUDE.md"},
+				Locations: []Location{
 					{Path: "packages/api"},
 				},
 			},
@@ -55,7 +54,7 @@ func TestSaveAndLoad(t *testing.T) {
 	if len(loaded.Rules) != 2 {
 		t.Errorf("expected 2 rules, got %d", len(loaded.Rules))
 	}
-	if len(loaded.Rules[0].Packages) != 2 {
-		t.Errorf("expected 2 packages on first rule, got %d", len(loaded.Rules[0].Packages))
+	if len(loaded.Rules[0].Locations) != 2 {
+		t.Errorf("expected 2 locations on first rule, got %d", len(loaded.Rules[0].Locations))
 	}
 }

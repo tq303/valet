@@ -9,14 +9,15 @@ import (
 
 const Filename = "valet.yaml"
 
-type RulePackage struct {
+type Location struct {
 	Path string `yaml:"path"`
 }
 
 type Rule struct {
-	Dest     string        `yaml:"dest,omitempty"`
-	Files    []string      `yaml:"files"`
-	Packages []RulePackage `yaml:"packages"`
+	Dest      string     `yaml:"dest,omitempty"`
+	Files     []string   `yaml:"files"`
+	Link      bool       `yaml:"link,omitempty"`
+	Locations []Location `yaml:"locations"`
 }
 
 type Config struct {

@@ -37,10 +37,11 @@ var syncCmd = &cobra.Command{
 		}
 
 		if dryRun {
-			fmt.Println("Dry run — no files written:\n")
+			fmt.Println("Dry run — no files written:")
 		} else {
-			fmt.Println("Synced:\n")
+			fmt.Println("Synced:")
 		}
+		fmt.Println()
 		for _, r := range results {
 			fmt.Printf("  %s → %s\n", filepath.Base(r.File), r.Dest)
 		}
