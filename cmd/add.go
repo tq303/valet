@@ -12,6 +12,8 @@ import (
 	"github.com/tq303/valet/internal/installer"
 )
 
+var once bool
+
 var addCmd = &cobra.Command{
 	Use:   "add [file]",
 	Short: "Add a file to be synced across locations",
@@ -38,6 +40,10 @@ var addCmd = &cobra.Command{
 			).Run(); err != nil {
 				return err
 			}
+		}
+
+		if once {
+			return addOnce(root, file)
 		}
 
 		cfg, err := config.Load(root)
@@ -357,6 +363,98 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 	return nil
 }
 
+func addOnce(root, file string) error {
+	isRepo := installer.IsGitRepo(file)
+	repoFile := ""
+
+	var cacheDir string
+	if isRepo {
+		fmt.Printf("Cloning %s...\n", file)
+		var err error
+		cacheDir, err = installer.EnsureRepo(file)
+		if err != nil {
+			return fmt.Errorf("failed to clone repo: %w", err)
+		}
+		if err := huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Title("File or folder within repo").
+					Placeholder("valyu-best-practices/").
+					Value(&repoFile),
+			),
+		).Run(); err != nil {
+			return err
+		}
+		if repoFile == "" {
+			fmt.Println("No file entered, nothing to do.")
+			return nil
+		}
+		src := filepath.Join(cacheDir, strings.TrimSuffix(repoFile, "/"))
+		if _, err := os.Stat(src); err != nil {
+			return fmt.Errorf("not found in repo: %s", repoFile)
+		}
+	} else if !installer.IsURL(file) {
+		src := installer.ResolvePath(root, file)
+		if _, err := os.Stat(src); err != nil {
+			return fmt.Errorf("file not found: %s", file)
+		}
+	}
+
+	var loc, dest string
+	if err := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Location to sync to").
+				Placeholder("packages/auth").
+				Value(&loc),
+			huh.NewInput().
+				Title("Destination folder (leave blank for root)").
+				Placeholder(".claude/commands").
+				Value(&dest),
+		),
+	).Run(); err != nil {
+		return err
+	}
+	if loc == "" {
+		fmt.Println("No location entered, nothing to do.")
+		return nil
+	}
+
+	locs, err := promptAdditionalLocations([]string{loc})
+	if err != nil {
+		return err
+	}
+
+	srcFile := file
+	if isRepo {
+		srcFile = repoFile
+	}
+
+	rule := config.Rule{
+		Dest:      dest,
+		Files:     []string{srcFile},
+		Locations: locs,
+	}
+	if isRepo {
+		rule.Repo = file
+	}
+
+	fileRoot := root
+	if isRepo {
+		fileRoot = cacheDir
+	}
+
+	results, err := installer.SyncRule(fileRoot, rule, locs, false, true)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("\nSynced %s:\n\n", installer.FileName(srcFile))
+	for _, r := range results {
+		fmt.Printf("  %s → %s\n", r.Package, r.Dest)
+	}
+	return nil
+}
+
 func promptAdditionalLocations(locs []string) ([]string, error) {
 	for {
 		var next string
@@ -378,5 +476,6 @@ func promptAdditionalLocations(locs []string) ([]string, error) {
 }
 
 func init() {
+	addCmd.Flags().BoolVarP(&once, "ignore", "i", false, "Sync without adding to valet.yaml")
 	rootCmd.AddCommand(addCmd)
 }
