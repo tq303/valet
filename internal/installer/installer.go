@@ -20,13 +20,13 @@ type Result struct {
 func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([]Result, error) {
 	var results []Result
 	for _, file := range rule.Files {
-		src := resolvePath(root, file)
+		src := ResolvePath(root, file)
 		if _, err := os.Stat(src); err != nil {
 			return nil, fmt.Errorf("source not found: %s", file)
 		}
 
 		for _, loc := range locations {
-			destDir := resolvePath(root, loc)
+			destDir := ResolvePath(root, loc)
 			if rule.Dest != "" {
 				destDir = filepath.Join(destDir, rule.Dest)
 			}
@@ -66,8 +66,8 @@ func SyncAll(root string, cfg *config.Config, dryRun bool) ([]Result, error) {
 	return all, nil
 }
 
-// resolvePath expands ~/ and resolves relative paths against root.
-func resolvePath(root, path string) string {
+// ResolvePath expands ~/ and resolves relative paths against root.
+func ResolvePath(root, path string) string {
 	if strings.HasPrefix(path, "~/") {
 		home, _ := os.UserHomeDir()
 		return filepath.Join(home, path[2:])
@@ -95,7 +95,7 @@ func copyAny(src, dest string) error {
 	if info.IsDir() {
 		return copyDir(src, dest)
 	}
-	return copyFile(src, dest)
+	return CopyFile(src, dest)
 }
 
 func copyDir(src, dest string) error {
@@ -114,7 +114,7 @@ func copyDir(src, dest string) error {
 	return nil
 }
 
-func copyFile(src, dest string) error {
+func CopyFile(src, dest string) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		return err
 	}

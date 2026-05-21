@@ -14,8 +14,8 @@ import (
 
 var addCmd = &cobra.Command{
 	Use:   "add [file]",
-	Short: "Add a file to be synced across packages",
-	Long:  "Add any file to be tracked and synced. If a matching rule exists, the file is added to it.",
+	Short: "Add a file to be synced across locations",
+	Long:  "Add any file to be tracked and synced. If already tracked, promotes or extends it.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		root, err := os.Getwd()
@@ -41,15 +41,13 @@ var addCmd = &cobra.Command{
 		}
 
 		// Verify file exists
-		src := file
-		if !filepath.IsAbs(src) {
-			src = filepath.Join(root, src)
-		}
+		src := installer.ResolvePath(root, file)
 		if _, err := os.Stat(src); err != nil {
 			return fmt.Errorf("file not found: %s", file)
 		}
 
 		filename := filepath.Base(file)
+		dir := filepath.Dir(file)
 
 		cfg, err := config.Load(root)
 		if err != nil {
@@ -60,7 +58,33 @@ var addCmd = &cobra.Command{
 		for i, rule := range cfg.Rules {
 			for _, f := range rule.Files {
 				if filepath.Base(f) == filename {
-					// File already tracked — show packages that don't have it yet
+					// Check if passed path is from inside a known location — promote flow
+					for _, loc := range rule.Locations {
+						resolvedLoc := installer.ResolvePath(root, loc.Path)
+						resolvedDir := installer.ResolvePath(root, dir)
+						if resolvedLoc == resolvedDir {
+							// Promote: copy this version over the source, sync everywhere
+							ruleSrc := installer.ResolvePath(root, f)
+							if err := installer.CopyFile(src, ruleSrc); err != nil {
+								return fmt.Errorf("failed to promote %s: %w", filename, err)
+							}
+							allLocs := make([]string, len(rule.Locations))
+							for j, l := range rule.Locations {
+								allLocs[j] = l.Path
+							}
+							results, err := installer.SyncRule(root, cfg.Rules[i], allLocs, false)
+							if err != nil {
+								return err
+							}
+							fmt.Printf("\nPromoted %s from %s and synced to:\n\n", filename, dir)
+							for _, r := range results {
+								fmt.Printf("  %s → %s\n", r.Package, r.Dest)
+							}
+							return nil
+						}
+					}
+
+					// Not a promote — show locations that don't have it yet
 					existing := map[string]bool{}
 					for _, rp := range rule.Locations {
 						existing[rp.Path] = true
@@ -79,7 +103,7 @@ var addCmd = &cobra.Command{
 					}
 
 					if len(locOptions) == 0 {
-						fmt.Printf("%s is already tracked for all packages.\n", filename)
+						fmt.Printf("%s is already tracked for all locations.\n", filename)
 						return nil
 					}
 
@@ -87,7 +111,7 @@ var addCmd = &cobra.Command{
 					if err := huh.NewForm(
 						huh.NewGroup(
 							huh.NewMultiSelect[string]().
-								Title(fmt.Sprintf("Add %s to which packages?", filename)).
+								Title(fmt.Sprintf("Add %s to which locations?", filename)).
 								Options(locOptions...).
 								Value(&selectedLocs),
 						),
@@ -96,7 +120,7 @@ var addCmd = &cobra.Command{
 					}
 
 					if len(selectedLocs) == 0 {
-						fmt.Println("No packages selected, nothing to do.")
+						fmt.Println("No locations selected, nothing to do.")
 						return nil
 					}
 
@@ -119,7 +143,7 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		// New file — prompt for dest folder and packages
+		// New file — prompt for dest folder and locations
 		packages, err := discovery.Discover(root)
 		if err != nil {
 			return err
@@ -136,11 +160,11 @@ var addCmd = &cobra.Command{
 		if err := huh.NewForm(
 			huh.NewGroup(
 				huh.NewMultiSelect[string]().
-					Title("Which packages should this apply to?").
+					Title("Which locations should this apply to?").
 					Options(locOptions...).
 					Value(&selectedLocs),
 				huh.NewInput().
-					Title("Destination folder in each package (leave blank for root)").
+					Title("Destination folder in each location (leave blank for root)").
 					Placeholder(".claude").
 					Value(&dest),
 			),
@@ -149,7 +173,7 @@ var addCmd = &cobra.Command{
 		}
 
 		if len(selectedLocs) == 0 {
-			fmt.Println("No packages selected, nothing to do.")
+			fmt.Println("No locations selected, nothing to do.")
 			return nil
 		}
 
@@ -158,9 +182,9 @@ var addCmd = &cobra.Command{
 			locs = append(locs, config.Location{Path: p})
 		}
 
-		// Find an existing rule with the same dest and packages to group into
+		// Find an existing rule with same dest and locations to group into
 		for i, rule := range cfg.Rules {
-			if rule.Dest == dest && samePackages(rule.Locations, locs) {
+			if rule.Dest == dest && sameLocations(rule.Locations, locs) {
 				cfg.Rules[i].Files = append(cfg.Rules[i].Files, filename)
 				if err := config.Save(root, cfg); err != nil {
 					return err
@@ -179,8 +203,8 @@ var addCmd = &cobra.Command{
 
 		// No matching rule — create a new one
 		rule := config.Rule{
-			Dest:     dest,
-			Files:    []string{filename},
+			Dest:      dest,
+			Files:     []string{filename},
 			Locations: locs,
 		}
 		cfg.Rules = append(cfg.Rules, rule)
@@ -200,7 +224,7 @@ var addCmd = &cobra.Command{
 	},
 }
 
-func samePackages(a, b []config.Location) bool {
+func sameLocations(a, b []config.Location) bool {
 	if len(a) != len(b) {
 		return false
 	}
