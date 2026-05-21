@@ -91,7 +91,7 @@ var addCmd = &cobra.Command{
 					}
 				}
 
-				// Extend — prompt for an additional location
+				// Extend — prompt for additional locations
 				var loc string
 				if err := huh.NewForm(
 					huh.NewGroup(
@@ -109,18 +109,35 @@ var addCmd = &cobra.Command{
 					return nil
 				}
 
-				for _, existing := range rule.Locations {
-					if existing == loc {
-						fmt.Printf("%s is already synced to %s.\n", filename, loc)
-						return nil
+				newLocs, err := promptAdditionalLocations([]string{loc})
+				if err != nil {
+					return err
+				}
+
+				var added []string
+				for _, l := range newLocs {
+					already := false
+					for _, existing := range rule.Locations {
+						if existing == l {
+							already = true
+							break
+						}
+					}
+					if !already {
+						cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, l)
+						added = append(added, l)
 					}
 				}
 
-				cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, loc)
+				if len(added) == 0 {
+					fmt.Println("All locations already tracked.")
+					return nil
+				}
+
 				if err := config.Save(root, cfg); err != nil {
 					return err
 				}
-				results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false, true)
+				results, err := installer.SyncRule(root, cfg.Rules[i], added, false, true)
 				if err != nil {
 					return err
 				}
@@ -154,14 +171,20 @@ var addCmd = &cobra.Command{
 			return nil
 		}
 
-		// Group into an existing rule with the same dest and location if possible
+		locs, err := promptAdditionalLocations([]string{loc})
+		if err != nil {
+			return err
+		}
+
+		// Group into an existing rule with the same dest and locations if possible
 		for i, rule := range cfg.Rules {
 			if rule.Dest == dest && len(rule.Locations) == 1 && rule.Locations[0] == loc {
 				cfg.Rules[i].Files = append(cfg.Rules[i].Files, file)
+				cfg.Rules[i].Locations = locs
 				if err := config.Save(root, cfg); err != nil {
 					return err
 				}
-				results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false, true)
+				results, err := installer.SyncRule(root, cfg.Rules[i], locs, false, true)
 				if err != nil {
 					return err
 				}
@@ -177,7 +200,7 @@ var addCmd = &cobra.Command{
 		rule := config.Rule{
 			Dest:      dest,
 			Files:     []string{file},
-			Locations: []string{loc},
+			Locations: locs,
 		}
 		cfg.Rules = append(cfg.Rules, rule)
 		if err := config.Save(root, cfg); err != nil {
@@ -332,6 +355,26 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 		fmt.Printf("  %s → %s\n", r.Package, r.Dest)
 	}
 	return nil
+}
+
+func promptAdditionalLocations(locs []string) ([]string, error) {
+	for {
+		var next string
+		if err := huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Title("Add another location? (leave blank to finish)").
+					Value(&next),
+			),
+		).Run(); err != nil {
+			return nil, err
+		}
+		if next == "" {
+			break
+		}
+		locs = append(locs, next)
+	}
+	return locs, nil
 }
 
 func init() {

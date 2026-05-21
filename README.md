@@ -34,13 +34,13 @@ The typical setup:
 
 ```bash
 # 1. Add a file — creates valet.yaml if it doesn't exist, prompts for location and destination folder
-valet add CLAUDE.md
+valet add .eslintrc.js
 
 # 2. Sync — creates empty files at all locations if they don't exist yet
 valet sync
 
 # 3. Edit whichever copy you want, then promote it everywhere
-valet sync packages/auth/CLAUDE.md
+valet sync packages/auth/.eslintrc.js
 ```
 
 After step 2 you have empty placeholder files at every location. Edit the one you want to be the source of truth, then `valet sync <that-path>` to propagate it everywhere.
