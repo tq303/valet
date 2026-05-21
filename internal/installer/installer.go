@@ -18,6 +18,7 @@ type Result struct {
 	Package string
 	File    string
 	Dest    string
+	Changed bool
 }
 
 func IsURL(s string) bool {
@@ -65,14 +66,21 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun, force b
 			}
 			dest := filepath.Join(destDir, name)
 
-			if !dryRun && !force && !IsURL(file) && !rule.Link {
+			changed := true
+			if !force && !IsURL(file) && rule.Repo == "" {
 				src := ResolvePath(fileRoot, file)
-				if upToDate(src, dest) {
-					continue
+				if rule.Link {
+					changed = !symlinkUpToDate(src, dest)
+				} else {
+					changed = !upToDate(src, dest)
 				}
 			}
 
-			results = append(results, Result{Package: loc, File: file, Dest: dest})
+			if !dryRun && !changed {
+				continue
+			}
+
+			results = append(results, Result{Package: loc, File: file, Dest: dest, Changed: changed})
 			if dryRun {
 				continue
 			}
@@ -107,6 +115,14 @@ func SyncAll(root string, cfg *config.Config, dryRun, force bool) ([]Result, err
 		all = append(all, results...)
 	}
 	return all, nil
+}
+
+func symlinkUpToDate(src, dest string) bool {
+	target, err := os.Readlink(dest)
+	if err != nil {
+		return false
+	}
+	return target == src
 }
 
 func upToDate(src, dest string) bool {

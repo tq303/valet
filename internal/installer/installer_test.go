@@ -26,7 +26,7 @@ func setup(t *testing.T) (root string, rule config.Rule) {
 func TestSyncRuleCopies(t *testing.T) {
 	root, rule := setup(t)
 	locs := []string{"packages/auth", "packages/api"}
-	results, err := SyncRule(root, rule, locs, false)
+	results, err := SyncRule(root, rule, locs, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -42,7 +42,7 @@ func TestSyncRuleCopies(t *testing.T) {
 
 func TestSyncRuleDryRun(t *testing.T) {
 	root, rule := setup(t)
-	results, err := SyncRule(root, rule, []string{"packages/auth"}, true)
+	results, err := SyncRule(root, rule, []string{"packages/auth"}, true, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestSyncRuleMissingSource(t *testing.T) {
 	root := t.TempDir()
 	os.MkdirAll(filepath.Join(root, "packages/auth"), 0755)
 	rule := config.Rule{Files: []string{"nonexistent.md"}, Locations: []string{"packages/auth"}}
-	_, err := SyncRule(root, rule, []string{"packages/auth"}, false)
+	_, err := SyncRule(root, rule, []string{"packages/auth"}, false, false)
 	if err != nil {
 		t.Fatalf("expected empty file to be created, got error: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestSyncAll(t *testing.T) {
 		Version: 1,
 		Rules:   []config.Rule{rule},
 	}
-	results, err := SyncAll(root, cfg, false)
+	results, err := SyncAll(root, cfg, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

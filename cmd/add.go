@@ -78,7 +78,7 @@ var addCmd = &cobra.Command{
 							if err := installer.CopyFile(abs, ruleSrc); err != nil {
 								return fmt.Errorf("failed to promote %s: %w", filename, err)
 							}
-							results, err := installer.SyncRule(root, cfg.Rules[i], rule.Locations, false)
+							results, err := installer.SyncRule(root, cfg.Rules[i], rule.Locations, false, true)
 							if err != nil {
 								return err
 							}
@@ -120,7 +120,7 @@ var addCmd = &cobra.Command{
 				if err := config.Save(root, cfg); err != nil {
 					return err
 				}
-				results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
+				results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false, true)
 				if err != nil {
 					return err
 				}
@@ -161,7 +161,7 @@ var addCmd = &cobra.Command{
 				if err := config.Save(root, cfg); err != nil {
 					return err
 				}
-				results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
+				results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false, true)
 				if err != nil {
 					return err
 				}
@@ -184,7 +184,7 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		results, err := installer.SyncRule(root, rule, []string{loc}, false)
+		results, err := installer.SyncRule(root, rule, []string{loc}, false, true)
 		if err != nil {
 			return err
 		}
@@ -261,7 +261,7 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 			if err := config.Save(root, cfg); err != nil {
 				return err
 			}
-			results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
+			results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false, true)
 			if err != nil {
 				return err
 			}
@@ -301,7 +301,7 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 			if err := config.Save(root, cfg); err != nil {
 				return err
 			}
-			results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
+			results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false, true)
 			if err != nil {
 				return err
 			}
@@ -323,7 +323,7 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 	if err := config.Save(root, cfg); err != nil {
 		return err
 	}
-	results, err := installer.SyncRule(root, rule, []string{loc}, false)
+	results, err := installer.SyncRule(root, rule, []string{loc}, false, true)
 	if err != nil {
 		return err
 	}

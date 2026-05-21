@@ -11,6 +11,7 @@ import (
 )
 
 var dryRun bool
+var force bool
 
 var syncCmd = &cobra.Command{
 	Use:   "sync [file]",
@@ -36,19 +37,23 @@ var syncCmd = &cobra.Command{
 			return syncFromPath(root, cfg, args[0], dryRun)
 		}
 
-		results, err := installer.SyncAll(root, cfg, dryRun)
+		results, err := installer.SyncAll(root, cfg, dryRun, force)
 		if err != nil {
 			return err
 		}
 
 		if dryRun {
-			fmt.Println("Dry run — no files written:")
+			fmt.Println("Dry run — * would be written:")
 		} else {
 			fmt.Println("Synced:")
 		}
 		fmt.Println()
 		for _, r := range results {
-			fmt.Printf("  %s → %s\n", installer.FileName(r.File), r.Dest)
+			marker := "  "
+			if dryRun && r.Changed {
+				marker = "* "
+			}
+			fmt.Printf("%s%s → %s\n", marker, installer.FileName(r.File), r.Dest)
 		}
 		return nil
 	},
@@ -80,7 +85,7 @@ func syncFromPath(root string, cfg *config.Config, path string, dryRun bool) err
 						return fmt.Errorf("failed to promote %s: %w", filename, err)
 					}
 				}
-				results, err := installer.SyncRule(root, rule, rule.Locations, dryRun)
+				results, err := installer.SyncRule(root, rule, rule.Locations, dryRun, force)
 				if err != nil {
 					return err
 				}
@@ -102,5 +107,6 @@ func syncFromPath(root string, cfg *config.Config, path string, dryRun bool) err
 
 func init() {
 	syncCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Preview changes without applying them")
+	syncCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite destinations even if already up to date")
 	rootCmd.AddCommand(syncCmd)
 }

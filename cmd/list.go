@@ -32,7 +32,7 @@ var listCmd = &cobra.Command{
 
 		exitCode := 0
 		for _, rule := range cfg.Rules {
-			results, err := installer.SyncRule(root, rule, rule.Locations, true)
+			results, err := installer.SyncRule(root, rule, rule.Locations, true, false)
 			if err != nil {
 				return err
 			}
