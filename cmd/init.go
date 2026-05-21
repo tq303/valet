@@ -11,7 +11,6 @@ import (
 	"github.com/tq303/val/internal/discovery"
 	"github.com/tq303/val/internal/preset"
 	valrules "github.com/tq303/val/internal/rules"
-	"gopkg.in/yaml.v3"
 )
 
 var initCmd = &cobra.Command{
@@ -131,11 +130,7 @@ var initCmd = &cobra.Command{
 			Rules:    configRules,
 			Packages: configPackages,
 		}
-		data, err := yaml.Marshal(cfg)
-		if err != nil {
-			return err
-		}
-		if err := os.WriteFile(filepath.Join(root, "valet.yaml"), data, 0644); err != nil {
+		if err := config.Save(root, &cfg); err != nil {
 			return fmt.Errorf("could not write valet.yaml: %w", err)
 		}
 

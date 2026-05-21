@@ -61,18 +61,18 @@ packages:
 - For each unassigned rule, prompt which tools it applies to
 - Write selections into `valet.yaml`
 
-### Phase 4 — Install Logic
+### Phase 4 — Install Logic ✅
 - Read `valet.yaml` for rules and packages
 - For each package, resolve destination path per rule (preset or explicit `dest`)
 - Generate tool-specific formats where needed (e.g. `.mdc` frontmatter for Cursor)
 - `--dry-run` flag to preview changes before applying
 
-### Phase 5 — Ad-hoc File Syncing (`val add`)
+### Phase 5 — Ad-hoc File Syncing (`val add`) ✅
 - `val add <file>` — pick a file, select target packages, write to `valet.yaml`
 - Works for any file type (ESLint, Prettier, tsconfig, etc.)
 - `val install` applies it the same as preset rules
 
-### Phase 6 — List Command
+### Phase 6 — List Command ✅
 - `val list` outputs structured coverage report
 - Shows rule/file coverage per package
 - Flags missing or outdated files
