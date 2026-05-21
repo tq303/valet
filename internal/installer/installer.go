@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
 	"github.com/tq303/val/internal/config"
 )
 
@@ -16,9 +15,9 @@ type Result struct {
 	Skipped bool
 }
 
-// InstallRule copies a single rule's source file into each of the given packages,
+// InstallFile copies a single rule's source file into each of the given packages,
 // skipping any listed in rule.Exclude.
-func InstallRule(root string, rule config.Rule, packages []string, dryRun bool) ([]Result, error) {
+func InstallFile(root string, rule config.Rule, packages []string, dryRun bool) ([]Result, error) {
 	src := filepath.Join(root, rule.File)
 	if _, err := os.Stat(src); err != nil {
 		return nil, fmt.Errorf("source file not found: %s", rule.File)
@@ -56,7 +55,7 @@ func InstallAll(root string, cfg *config.Config, dryRun bool) ([]Result, error) 
 
 	var all []Result
 	for _, rule := range cfg.Rules {
-		results, err := InstallRule(root, rule, pkgPaths, dryRun)
+		results, err := InstallFile(root, rule, pkgPaths, dryRun)
 		if err != nil {
 			return nil, err
 		}

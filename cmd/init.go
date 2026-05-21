@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
 	"github.com/charmbracelet/huh"
+	"github.com/spf13/cobra"
 	"github.com/tq303/val/internal/config"
 	"github.com/tq303/val/internal/discovery"
+	"github.com/tq303/val/internal/preset"
 	valrules "github.com/tq303/val/internal/rules"
 	"gopkg.in/yaml.v3"
-	"github.com/spf13/cobra"
 )
 
 var initCmd = &cobra.Command{
@@ -53,24 +55,26 @@ var initCmd = &cobra.Command{
 			return nil
 		}
 
-		// Separate pre-assigned rules from ones that need tool selection
+		// Separate pre-assigned (tool subdir) from unassigned (root level)
 		var unassigned []valrules.ScannedRule
 		var configRules []config.Rule
 
 		for _, r := range scanned {
 			if r.Tools != nil {
-				var tools []config.Tool
-				for _, t := range r.Tools {
-					tools = append(tools, config.Tool(t))
+				// Use preset to resolve dest for each assigned tool
+				for _, tool := range r.Tools {
+					configRules = append(configRules, config.Rule{
+						File:   r.Name,
+						Preset: tool,
+						Dest:   preset.Dest(tool, filepath.Base(r.Name)),
+					})
 				}
-				configRules = append(configRules, config.Rule{File: r.Name, Tools: tools})
 			} else {
 				unassigned = append(unassigned, r)
 			}
 		}
 
 		if len(unassigned) > 0 {
-			// Step 1: select which unassigned rules to include
 			var fileOptions []huh.Option[string]
 			for _, r := range unassigned {
 				fileOptions = append(fileOptions, huh.NewOption(r.Name, r.Path))
@@ -88,11 +92,11 @@ var initCmd = &cobra.Command{
 				return err
 			}
 
-			// Step 2: for each selected rule, pick tools
 			toolOptions := []huh.Option[string]{
-				huh.NewOption("Claude Code", string(config.ToolClaude)),
-				huh.NewOption("Cursor", string(config.ToolCursor)),
+				huh.NewOption("Claude Code", preset.Claude),
+				huh.NewOption("Cursor", preset.Cursor),
 			}
+
 			for _, path := range selectedPaths {
 				name := filepath.Base(path)
 				var selectedTools []string
@@ -106,11 +110,13 @@ var initCmd = &cobra.Command{
 				).Run(); err != nil {
 					return err
 				}
-				var tools []config.Tool
-				for _, t := range selectedTools {
-					tools = append(tools, config.Tool(t))
+				for _, tool := range selectedTools {
+					configRules = append(configRules, config.Rule{
+						File:   name,
+						Preset: tool,
+						Dest:   preset.Dest(tool, name),
+					})
 				}
-				configRules = append(configRules, config.Rule{File: name, Tools: tools})
 			}
 		}
 
@@ -120,7 +126,6 @@ var initCmd = &cobra.Command{
 			configPackages = append(configPackages, config.Package{Path: p.Path})
 		}
 
-		// Write valet.yaml
 		cfg := config.Config{
 			Version:  1,
 			Rules:    configRules,

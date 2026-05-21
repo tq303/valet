@@ -110,7 +110,7 @@ var addCmd = &cobra.Command{
 		}
 
 		// Install immediately
-		results, err := installer.InstallRule(root, rule, selectedPkgs, false)
+		results, err := installer.InstallFile(root, rule, selectedPkgs, false)
 		if err != nil {
 			return err
 		}

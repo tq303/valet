@@ -1,17 +1,19 @@
 package config
 
-type Tool string
+import (
+	"os"
+	"path/filepath"
 
-const (
-	ToolClaude Tool = "claude"
-	ToolCursor Tool = "cursor"
+	"gopkg.in/yaml.v3"
 )
+
+const Filename = "valet.yaml"
 
 type Rule struct {
 	File    string   `yaml:"file"`
 	Dest    string   `yaml:"dest,omitempty"`
+	Preset  string   `yaml:"preset,omitempty"`
 	Exclude []string `yaml:"exclude,omitempty"`
-	Tools   []Tool   `yaml:"tools,omitempty"`
 }
 
 type Package struct {
@@ -23,4 +25,27 @@ type Config struct {
 	Version  int       `yaml:"version"`
 	Rules    []Rule    `yaml:"rules"`
 	Packages []Package `yaml:"packages"`
+}
+
+func Load(root string) (*Config, error) {
+	data, err := os.ReadFile(filepath.Join(root, Filename))
+	if os.IsNotExist(err) {
+		return &Config{Version: 1}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func Save(root string, cfg *Config) error {
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(root, Filename), data, 0644)
 }
