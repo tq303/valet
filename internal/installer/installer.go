@@ -1,6 +1,7 @@
 package installer
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,7 +35,7 @@ func FileName(file string) string {
 }
 
 // SyncRule syncs all files in a rule into the given locations.
-func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([]Result, error) {
+func SyncRule(root string, rule config.Rule, locations []string, dryRun, force bool) ([]Result, error) {
 	fileRoot := root
 	if rule.Repo != "" && !dryRun {
 		cacheDir, err := EnsureRepo(rule.Repo)
@@ -63,6 +64,14 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([
 				destDir = filepath.Join(destDir, rule.Dest)
 			}
 			dest := filepath.Join(destDir, name)
+
+			if !dryRun && !force && !IsURL(file) && !rule.Link {
+				src := ResolvePath(fileRoot, file)
+				if upToDate(src, dest) {
+					continue
+				}
+			}
+
 			results = append(results, Result{Package: loc, File: file, Dest: dest})
 			if dryRun {
 				continue
@@ -88,16 +97,35 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([
 }
 
 // SyncAll applies every rule in cfg to its own location list.
-func SyncAll(root string, cfg *config.Config, dryRun bool) ([]Result, error) {
+func SyncAll(root string, cfg *config.Config, dryRun, force bool) ([]Result, error) {
 	var all []Result
 	for _, rule := range cfg.Rules {
-		results, err := SyncRule(root, rule, rule.Locations, dryRun)
+		results, err := SyncRule(root, rule, rule.Locations, dryRun, force)
 		if err != nil {
 			return nil, err
 		}
 		all = append(all, results...)
 	}
 	return all, nil
+}
+
+func upToDate(src, dest string) bool {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return false
+	}
+	if srcInfo.IsDir() {
+		return false
+	}
+	a, err := os.ReadFile(src)
+	if err != nil {
+		return false
+	}
+	b, err := os.ReadFile(dest)
+	if err != nil {
+		return false
+	}
+	return bytes.Equal(a, b)
 }
 
 // ResolvePath expands ~/ and resolves relative paths against root.
@@ -164,6 +192,9 @@ func copyAny(src, dest string) error {
 }
 
 func copyDir(src, dest string) error {
+	if info, err := os.Stat(dest); err == nil && !info.IsDir() {
+		os.Remove(dest)
+	}
 	if err := os.MkdirAll(dest, 0755); err != nil {
 		return err
 	}

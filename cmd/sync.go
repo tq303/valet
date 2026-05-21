@@ -101,6 +101,6 @@ func syncFromPath(root string, cfg *config.Config, path string, dryRun bool) err
 }
 
 func init() {
-	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without applying them")
+	syncCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Preview changes without applying them")
 	rootCmd.AddCommand(syncCmd)
 }
