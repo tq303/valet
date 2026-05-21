@@ -14,7 +14,7 @@ import (
 var addCmd = &cobra.Command{
 	Use:   "add [file]",
 	Short: "Add a file to be synced across locations",
-	Long:  "Add any file to be tracked and synced. If already tracked, promotes or extends it.",
+	Long:  "Add any file or URL to be tracked and synced. If already tracked, promotes or extends it.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		root, err := os.Getwd()
@@ -30,7 +30,7 @@ var addCmd = &cobra.Command{
 			if err := huh.NewForm(
 				huh.NewGroup(
 					huh.NewInput().
-						Title("File to add").
+						Title("File or URL to add").
 						Placeholder("CLAUDE.md").
 						Value(&file),
 				),
@@ -39,14 +39,17 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		// Verify file exists
-		src := installer.ResolvePath(root, file)
-		if _, err := os.Stat(src); err != nil {
-			return fmt.Errorf("file not found: %s", file)
-		}
+		isURL := installer.IsURL(file)
+		filename := installer.FileName(file)
+		dir := ""
 
-		filename := filepath.Base(file)
-		dir := filepath.Dir(file)
+		if !isURL {
+			src := installer.ResolvePath(root, file)
+			if _, err := os.Stat(src); err != nil {
+				return fmt.Errorf("file not found: %s", file)
+			}
+			dir = filepath.Dir(file)
+		}
 
 		cfg, err := config.Load(root)
 		if err != nil {
@@ -56,15 +59,18 @@ var addCmd = &cobra.Command{
 		// Check if file is already tracked in any rule
 		for i, rule := range cfg.Rules {
 			for _, f := range rule.Files {
-				if filepath.Base(f) == filename {
-					// Check if passed path is from inside a known location — promote flow
+				if installer.FileName(f) != filename {
+					continue
+				}
+
+				// Promote flow — only for local files whose path is inside a known location
+				if !isURL {
+					abs := installer.ResolvePath(root, file)
+					absDir := filepath.Dir(abs)
 					for _, loc := range rule.Locations {
-						resolvedLoc := installer.ResolvePath(root, loc)
-						resolvedDir := installer.ResolvePath(root, dir)
-						if resolvedLoc == resolvedDir {
-							// Promote: copy this version over the source, sync everywhere
+						if installer.ResolvePath(root, loc) == absDir {
 							ruleSrc := installer.ResolvePath(root, f)
-							if err := installer.CopyFile(src, ruleSrc); err != nil {
+							if err := installer.CopyFile(abs, ruleSrc); err != nil {
 								return fmt.Errorf("failed to promote %s: %w", filename, err)
 							}
 							results, err := installer.SyncRule(root, cfg.Rules[i], rule.Locations, false)
@@ -78,46 +84,46 @@ var addCmd = &cobra.Command{
 							return nil
 						}
 					}
+				}
 
-					// Not a promote — prompt for an additional location
-					var loc string
-					if err := huh.NewForm(
-						huh.NewGroup(
-							huh.NewInput().
-								Title(fmt.Sprintf("Add %s to which location?", filename)).
-								Placeholder("packages/web").
-								Value(&loc),
-						),
-					).Run(); err != nil {
-						return err
-					}
+				// Extend — prompt for an additional location
+				var loc string
+				if err := huh.NewForm(
+					huh.NewGroup(
+						huh.NewInput().
+							Title(fmt.Sprintf("Add %s to which location?", filename)).
+							Placeholder("packages/web").
+							Value(&loc),
+					),
+				).Run(); err != nil {
+					return err
+				}
 
-					if loc == "" {
-						fmt.Println("No location entered, nothing to do.")
-						return nil
-					}
-
-					for _, existing := range rule.Locations {
-						if existing == loc {
-							fmt.Printf("%s is already synced to %s.\n", filename, loc)
-							return nil
-						}
-					}
-
-					cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, loc)
-					if err := config.Save(root, cfg); err != nil {
-						return err
-					}
-					results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
-					if err != nil {
-						return err
-					}
-					fmt.Printf("\nAdded %s to:\n\n", filename)
-					for _, r := range results {
-						fmt.Printf("  %s → %s\n", r.Package, r.Dest)
-					}
+				if loc == "" {
+					fmt.Println("No location entered, nothing to do.")
 					return nil
 				}
+
+				for _, existing := range rule.Locations {
+					if existing == loc {
+						fmt.Printf("%s is already synced to %s.\n", filename, loc)
+						return nil
+					}
+				}
+
+				cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, loc)
+				if err := config.Save(root, cfg); err != nil {
+					return err
+				}
+				results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
+				if err != nil {
+					return err
+				}
+				fmt.Printf("\nAdded %s to:\n\n", filename)
+				for _, r := range results {
+					fmt.Printf("  %s → %s\n", r.Package, r.Dest)
+				}
+				return nil
 			}
 		}
 
@@ -143,10 +149,10 @@ var addCmd = &cobra.Command{
 			return nil
 		}
 
-		// Find an existing rule with same dest and location to group into
+		// Group into an existing rule with the same dest and location if possible
 		for i, rule := range cfg.Rules {
 			if rule.Dest == dest && len(rule.Locations) == 1 && rule.Locations[0] == loc {
-				cfg.Rules[i].Files = append(cfg.Rules[i].Files, filename)
+				cfg.Rules[i].Files = append(cfg.Rules[i].Files, file)
 				if err := config.Save(root, cfg); err != nil {
 					return err
 				}
@@ -165,7 +171,7 @@ var addCmd = &cobra.Command{
 		// No matching rule — create a new one
 		rule := config.Rule{
 			Dest:      dest,
-			Files:     []string{filename},
+			Files:     []string{file},
 			Locations: []string{loc},
 		}
 		cfg.Rules = append(cfg.Rules, rule)

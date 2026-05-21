@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-
 	"github.com/spf13/cobra"
 	"github.com/tq303/val/internal/config"
 	"github.com/tq303/val/internal/installer"
@@ -40,10 +38,10 @@ var listCmd = &cobra.Command{
 			}
 			for _, r := range results {
 				if _, err := os.Stat(r.Dest); os.IsNotExist(err) {
-					fmt.Printf("%-30s %-20s MISSING\n", filepath.Base(r.File), r.Package)
+					fmt.Printf("%-30s %-20s MISSING\n", installer.FileName(r.File), r.Package)
 					exitCode = 1
 				} else {
-					fmt.Printf("%-30s %-20s ok\n", filepath.Base(r.File), r.Package)
+					fmt.Printf("%-30s %-20s ok\n", installer.FileName(r.File), r.Package)
 				}
 			}
 		}

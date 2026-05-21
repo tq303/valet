@@ -9,11 +9,12 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "valet",
 	Short: "Valet — sync config files across your monorepo",
-	Long:  "Valet manages and syncs config files across your monorepo packages. Add any file once, install it everywhere.",
+	Long:  "Valet manages and syncs files across locations. Add any file or URL once, sync it everywhere.",
 }
 
 func Execute() {
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
+	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

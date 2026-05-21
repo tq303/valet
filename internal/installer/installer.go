@@ -3,7 +3,10 @@ package installer
 import (
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -16,14 +19,31 @@ type Result struct {
 	Dest    string
 }
 
+func IsURL(s string) bool {
+	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+}
+
+// FileName returns the base filename for a local path or URL.
+func FileName(file string) string {
+	if IsURL(file) {
+		u, _ := url.Parse(file)
+		return path.Base(u.Path)
+	}
+	return filepath.Base(file)
+}
+
 // SyncRule syncs all files in a rule into the given locations.
 func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([]Result, error) {
 	var results []Result
 	for _, file := range rule.Files {
-		src := ResolvePath(root, file)
-		if _, err := os.Stat(src); err != nil {
-			if err := touchFile(src); err != nil {
-				return nil, fmt.Errorf("could not create %s: %w", file, err)
+		name := FileName(file)
+
+		if !IsURL(file) {
+			src := ResolvePath(root, file)
+			if _, err := os.Stat(src); err != nil {
+				if err := touchFile(src); err != nil {
+					return nil, fmt.Errorf("could not create %s: %w", file, err)
+				}
 			}
 		}
 
@@ -32,16 +52,22 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([
 			if rule.Dest != "" {
 				destDir = filepath.Join(destDir, rule.Dest)
 			}
-			dest := filepath.Join(destDir, filepath.Base(file))
+			dest := filepath.Join(destDir, name)
 			results = append(results, Result{Package: loc, File: file, Dest: dest})
 			if dryRun {
 				continue
 			}
-			if rule.Link {
+			if IsURL(file) {
+				if err := writeFromURL(file, dest); err != nil {
+					return nil, fmt.Errorf("failed to fetch %s: %w", file, err)
+				}
+			} else if rule.Link {
+				src := ResolvePath(root, file)
 				if err := symlink(src, dest); err != nil {
 					return nil, fmt.Errorf("failed to symlink %s to %s: %w", file, dest, err)
 				}
 			} else {
+				src := ResolvePath(root, file)
 				if err := copyAny(src, dest); err != nil {
 					return nil, fmt.Errorf("failed to sync %s to %s: %w", file, dest, err)
 				}
@@ -76,6 +102,27 @@ func ResolvePath(root, path string) string {
 	return filepath.Join(root, path)
 }
 
+func writeFromURL(rawURL, dest string) error {
+	resp, err := http.Get(rawURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP %d fetching %s", resp.StatusCode, rawURL)
+	}
+	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		return err
+	}
+	out, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
 func touchFile(path string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
@@ -91,7 +138,6 @@ func symlink(src, dest string) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		return err
 	}
-	// Remove existing file/symlink/dir at dest
 	os.Remove(dest)
 	return os.Symlink(src, dest)
 }

@@ -48,7 +48,7 @@ var syncCmd = &cobra.Command{
 		}
 		fmt.Println()
 		for _, r := range results {
-			fmt.Printf("  %s → %s\n", filepath.Base(r.File), r.Dest)
+			fmt.Printf("  %s → %s\n", installer.FileName(r.File), r.Dest)
 		}
 		return nil
 	},

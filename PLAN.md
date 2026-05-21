@@ -57,17 +57,17 @@ rules:
 - Tabular coverage report: file, location, status (ok / MISSING)
 - CI-compatible exit codes
 
+### Phase 5 — URL Sources ✅
+- `valet add <url>` tracks a remote file in `valet.yaml`
+- `valet sync` re-fetches from the URL to stay current
+- Works for any file type — skills, dotfiles, CI templates, editor config, etc.
+- Claude Code skills just need to land in `.claude/` — no special install step
+
 ## Non-Goals (MVP)
 - No monorepo auto-detection
-- No remote sources
 - No preset system (use `valet.yaml` directly)
 
 ## Future
-
-### Remote sources
-`valet add <url>` fetches a file (or directory) from a URL and tracks it in `valet.yaml`. `valet sync` re-fetches to stay current. Enables a platform team to host canonical configs centrally — devs run one command in any new repo to pull them in and stay up to date.
-
-Supported URL formats TBD (raw file, GitHub tree, gist).
 
 ### Monorepo workspace detection
 Auto-detect packages from npm/yarn/pnpm workspace config to pre-fill location options during `valet add`. Lower priority — users can type paths directly and the yaml is easy to edit by hand.
