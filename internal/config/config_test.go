@@ -24,18 +24,13 @@ func TestSaveAndLoad(t *testing.T) {
 		Version: 1,
 		Rules: []Rule{
 			{
-				Files: []string{".eslintrc.js"},
-				Locations: []Location{
-					{Path: "."},
-					{Path: "packages/auth"},
-				},
+				Files:     []string{".eslintrc.js"},
+				Locations: []string{".", "packages/auth"},
 			},
 			{
-				Dest:  ".claude",
-				Files: []string{"CLAUDE.md"},
-				Locations: []Location{
-					{Path: "packages/api"},
-				},
+				Dest:      ".claude",
+				Files:     []string{"CLAUDE.md"},
+				Locations: []string{"packages/api"},
 			},
 		},
 	}

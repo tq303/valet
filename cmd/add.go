@@ -60,7 +60,7 @@ var addCmd = &cobra.Command{
 				if filepath.Base(f) == filename {
 					// Check if passed path is from inside a known location — promote flow
 					for _, loc := range rule.Locations {
-						resolvedLoc := installer.ResolvePath(root, loc.Path)
+						resolvedLoc := installer.ResolvePath(root, loc)
 						resolvedDir := installer.ResolvePath(root, dir)
 						if resolvedLoc == resolvedDir {
 							// Promote: copy this version over the source, sync everywhere
@@ -68,11 +68,7 @@ var addCmd = &cobra.Command{
 							if err := installer.CopyFile(src, ruleSrc); err != nil {
 								return fmt.Errorf("failed to promote %s: %w", filename, err)
 							}
-							allLocs := make([]string, len(rule.Locations))
-							for j, l := range rule.Locations {
-								allLocs[j] = l.Path
-							}
-							results, err := installer.SyncRule(root, cfg.Rules[i], allLocs, false)
+							results, err := installer.SyncRule(root, cfg.Rules[i], rule.Locations, false)
 							if err != nil {
 								return err
 							}
@@ -87,7 +83,7 @@ var addCmd = &cobra.Command{
 					// Not a promote — show locations that don't have it yet
 					existing := map[string]bool{}
 					for _, rp := range rule.Locations {
-						existing[rp.Path] = true
+						existing[rp] = true
 					}
 
 					allPkgs, err := discovery.Discover(root)
@@ -124,9 +120,7 @@ var addCmd = &cobra.Command{
 						return nil
 					}
 
-					for _, p := range selectedLocs {
-						cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, config.Location{Path: p})
-					}
+					cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, selectedLocs...)
 					if err := config.Save(root, cfg); err != nil {
 						return err
 					}
@@ -177,14 +171,9 @@ var addCmd = &cobra.Command{
 			return nil
 		}
 
-		var locs []config.Location
-		for _, p := range selectedLocs {
-			locs = append(locs, config.Location{Path: p})
-		}
-
 		// Find an existing rule with same dest and locations to group into
 		for i, rule := range cfg.Rules {
-			if rule.Dest == dest && sameLocations(rule.Locations, locs) {
+			if rule.Dest == dest && sameLocations(rule.Locations, selectedLocs) {
 				cfg.Rules[i].Files = append(cfg.Rules[i].Files, filename)
 				if err := config.Save(root, cfg); err != nil {
 					return err
@@ -205,7 +194,7 @@ var addCmd = &cobra.Command{
 		rule := config.Rule{
 			Dest:      dest,
 			Files:     []string{filename},
-			Locations: locs,
+			Locations: selectedLocs,
 		}
 		cfg.Rules = append(cfg.Rules, rule)
 		if err := config.Save(root, cfg); err != nil {
@@ -224,16 +213,16 @@ var addCmd = &cobra.Command{
 	},
 }
 
-func sameLocations(a, b []config.Location) bool {
+func sameLocations(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
 	m := map[string]bool{}
 	for _, p := range a {
-		m[p.Path] = true
+		m[p] = true
 	}
 	for _, p := range b {
-		if !m[p.Path] {
+		if !m[p] {
 			return false
 		}
 	}

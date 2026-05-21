@@ -53,11 +53,7 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([
 func SyncAll(root string, cfg *config.Config, dryRun bool) ([]Result, error) {
 	var all []Result
 	for _, rule := range cfg.Rules {
-		locs := make([]string, len(rule.Locations))
-		for i, l := range rule.Locations {
-			locs[i] = l.Path
-		}
-		results, err := SyncRule(root, rule, locs, dryRun)
+		results, err := SyncRule(root, rule, rule.Locations, dryRun)
 		if err != nil {
 			return nil, err
 		}

@@ -17,11 +17,8 @@ func setup(t *testing.T) (root string, rule config.Rule) {
 	os.MkdirAll(filepath.Join(root, "packages/api"), 0755)
 
 	rule = config.Rule{
-		Files: []string{"shared.md"},
-		Locations: []config.Location{
-			{Path: "packages/auth"},
-			{Path: "packages/api"},
-		},
+		Files:     []string{"shared.md"},
+		Locations: []string{"packages/auth", "packages/api"},
 	}
 	return
 }

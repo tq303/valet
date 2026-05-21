@@ -34,11 +34,7 @@ var listCmd = &cobra.Command{
 
 		exitCode := 0
 		for _, rule := range cfg.Rules {
-			pkgs := make([]string, len(rule.Locations))
-			for i, p := range rule.Locations {
-				pkgs[i] = p.Path
-			}
-			results, err := installer.SyncRule(root, rule, pkgs, true)
+			results, err := installer.SyncRule(root, rule, rule.Locations, true)
 			if err != nil {
 				return err
 			}
