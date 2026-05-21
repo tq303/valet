@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -39,6 +40,15 @@ var addCmd = &cobra.Command{
 			}
 		}
 
+		cfg, err := config.Load(root)
+		if err != nil {
+			return err
+		}
+
+		if installer.IsGitRepo(file) {
+			return addFromRepo(root, cfg, file)
+		}
+
 		isURL := installer.IsURL(file)
 		filename := installer.FileName(file)
 		dir := ""
@@ -49,11 +59,6 @@ var addCmd = &cobra.Command{
 				return fmt.Errorf("file not found: %s", file)
 			}
 			dir = filepath.Dir(file)
-		}
-
-		cfg, err := config.Load(root)
-		if err != nil {
-			return err
 		}
 
 		// Check if file is already tracked in any rule
@@ -189,6 +194,144 @@ var addCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+func addFromRepo(root string, cfg *config.Config, repoURL string) error {
+	fmt.Printf("Cloning %s...\n", repoURL)
+	cacheDir, err := installer.EnsureRepo(repoURL)
+	if err != nil {
+		return fmt.Errorf("failed to clone repo: %w", err)
+	}
+
+	var repoFile string
+	if err := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("File or folder within repo").
+				Placeholder("valyu-best-practices/").
+				Value(&repoFile),
+		),
+	).Run(); err != nil {
+		return err
+	}
+	if repoFile == "" {
+		fmt.Println("No file entered, nothing to do.")
+		return nil
+	}
+
+	src := filepath.Join(cacheDir, strings.TrimSuffix(repoFile, "/"))
+	if _, err := os.Stat(src); err != nil {
+		return fmt.Errorf("not found in repo: %s", repoFile)
+	}
+
+	filename := installer.FileName(repoFile)
+
+	// Check if already tracked in this repo
+	for i, rule := range cfg.Rules {
+		if rule.Repo != repoURL {
+			continue
+		}
+		for _, f := range rule.Files {
+			if f != repoFile {
+				continue
+			}
+			// Extend with a new location
+			var loc string
+			if err := huh.NewForm(
+				huh.NewGroup(
+					huh.NewInput().
+						Title(fmt.Sprintf("Add %s to which location?", filename)).
+						Placeholder("packages/web").
+						Value(&loc),
+				),
+			).Run(); err != nil {
+				return err
+			}
+			if loc == "" {
+				fmt.Println("No location entered, nothing to do.")
+				return nil
+			}
+			for _, existing := range rule.Locations {
+				if existing == loc {
+					fmt.Printf("%s is already synced to %s.\n", filename, loc)
+					return nil
+				}
+			}
+			cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, loc)
+			if err := config.Save(root, cfg); err != nil {
+				return err
+			}
+			results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("\nAdded %s to:\n\n", filename)
+			for _, r := range results {
+				fmt.Printf("  %s → %s\n", r.Package, r.Dest)
+			}
+			return nil
+		}
+	}
+
+	// New repo file — prompt for location and dest
+	var loc, dest string
+	if err := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Location to sync to").
+				Placeholder("packages/auth").
+				Value(&loc),
+			huh.NewInput().
+				Title("Destination folder in each location (leave blank for root)").
+				Placeholder(".claude/commands").
+				Value(&dest),
+		),
+	).Run(); err != nil {
+		return err
+	}
+	if loc == "" {
+		fmt.Println("No location entered, nothing to do.")
+		return nil
+	}
+
+	// Group into existing rule with same repo, dest, and location if possible
+	for i, rule := range cfg.Rules {
+		if rule.Repo == repoURL && rule.Dest == dest && len(rule.Locations) == 1 && rule.Locations[0] == loc {
+			cfg.Rules[i].Files = append(cfg.Rules[i].Files, repoFile)
+			if err := config.Save(root, cfg); err != nil {
+				return err
+			}
+			results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("\nAdded %s:\n\n", filename)
+			for _, r := range results {
+				fmt.Printf("  %s → %s\n", r.Package, r.Dest)
+			}
+			return nil
+		}
+	}
+
+	rule := config.Rule{
+		Repo:      repoURL,
+		Dest:      dest,
+		Files:     []string{repoFile},
+		Locations: []string{loc},
+	}
+	cfg.Rules = append(cfg.Rules, rule)
+	if err := config.Save(root, cfg); err != nil {
+		return err
+	}
+	results, err := installer.SyncRule(root, rule, []string{loc}, false)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("\nAdded %s:\n\n", filename)
+	for _, r := range results {
+		fmt.Printf("  %s → %s\n", r.Package, r.Dest)
+	}
+	return nil
 }
 
 func init() {

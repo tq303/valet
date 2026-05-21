@@ -23,9 +23,6 @@ func IsURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
 
-func IsFolder(s string) bool {
-	return strings.HasSuffix(s, "/")
-}
 
 // FileName returns the base filename for a local path or URL.
 func FileName(file string) string {
@@ -38,21 +35,24 @@ func FileName(file string) string {
 
 // SyncRule syncs all files in a rule into the given locations.
 func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([]Result, error) {
+	fileRoot := root
+	if rule.Repo != "" && !dryRun {
+		cacheDir, err := EnsureRepo(rule.Repo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to sync repo %s: %w", rule.Repo, err)
+		}
+		fileRoot = cacheDir
+	}
+
 	var results []Result
 	for _, file := range rule.Files {
 		name := FileName(file)
 
-		if !IsURL(file) {
-			src := ResolvePath(root, file)
+		if !IsURL(file) && !dryRun && rule.Repo == "" {
+			src := ResolvePath(fileRoot, file)
 			if _, err := os.Stat(src); err != nil {
-				if IsFolder(file) {
-					if err := os.MkdirAll(src, 0755); err != nil {
-						return nil, fmt.Errorf("could not create %s: %w", file, err)
-					}
-				} else {
-					if err := touchFile(src); err != nil {
-						return nil, fmt.Errorf("could not create %s: %w", file, err)
-					}
+				if err := touchFile(src); err != nil {
+					return nil, fmt.Errorf("could not create %s: %w", file, err)
 				}
 			}
 		}
@@ -72,12 +72,12 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([
 					return nil, fmt.Errorf("failed to fetch %s: %w", file, err)
 				}
 			} else if rule.Link {
-				src := ResolvePath(root, file)
+				src := ResolvePath(fileRoot, file)
 				if err := symlink(src, dest); err != nil {
 					return nil, fmt.Errorf("failed to symlink %s to %s: %w", file, dest, err)
 				}
 			} else {
-				src := ResolvePath(root, file)
+				src := ResolvePath(fileRoot, file)
 				if err := copyAny(src, dest); err != nil {
 					return nil, fmt.Errorf("failed to sync %s to %s: %w", file, dest, err)
 				}

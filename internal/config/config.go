@@ -10,6 +10,7 @@ import (
 const Filename = "valet.yaml"
 
 type Rule struct {
+	Repo      string   `yaml:"repo,omitempty"`
 	Dest      string   `yaml:"dest,omitempty"`
 	Files     []string `yaml:"files"`
 	Link      bool     `yaml:"link,omitempty"`
