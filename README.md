@@ -1,6 +1,6 @@
 # Valet
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![language](https://img.shields.io/badge/built%20with-Go-00ADD8) ![license](https://img.shields.io/badge/license-none-lightgrey)
+![version](https://img.shields.io/badge/version-0.2.0-blue) ![language](https://img.shields.io/badge/built%20with-Go-00ADD8) ![license](https://img.shields.io/badge/license-none-lightgrey)
 
 One config. Any file. Anywhere it needs to be.
 
@@ -17,8 +17,11 @@ go install github.com/tq303/valet@latest
 ## Usage
 
 ```bash
-valet add <file>              # add a file to sync across locations
-valet sync                    # sync all configured files to their locations
+valet add <file>              # add a file or folder to sync across locations
+valet add <git-repo-url>      # add files from a git repo
+valet sync                    # sync changed files to their locations
+valet sync -f                 # force overwrite all destinations
+valet sync -d                 # dry run — show what would be written (* = would change)
 valet sync <file-in-location> # promote that version as source and sync everywhere
 valet list                    # show coverage across all locations
 ```
@@ -69,9 +72,11 @@ rules:
       - packages/api
 ```
 
+> Use `dest` when multiple locations share the same subfolder — it saves repeating the path.
+
 ### Dotfiles / rig
 
-Symlink your config folders to `~/.config` from a single location repo:
+Symlink your config folders and dotfiles from a single rig repo:
 
 ```yaml
 version: 1
@@ -82,7 +87,33 @@ rules:
       - ghostty
     locations:
       - ~/.config
+  - link: true
+    files:
+      - claude/CLAUDE.md
+    locations:
+      - ~/.claude
+  - link: true
+    files:
+      - .zshsource
+    locations:
+      - ~/
 ```
+
+### Files from a git repo
+
+Track files or folders from any git repo as a source. On `valet sync`, the repo is cloned to `/tmp/valet/repos/` and kept up to date — folder structure and internal references are preserved.
+
+```yaml
+version: 1
+rules:
+  - repo: https://github.com/valyuAI/skills
+    files:
+      - valyu-search/valyu-best-practices
+    locations:
+      - ~/.claude/commands
+```
+
+---
 
 ### Shared tooling config across a monorepo
 
