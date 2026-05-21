@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 	"github.com/tq303/val/internal/config"
-	"github.com/tq303/val/internal/discovery"
 	"github.com/tq303/val/internal/installer"
 )
 
@@ -80,51 +79,29 @@ var addCmd = &cobra.Command{
 						}
 					}
 
-					// Not a promote — show locations that don't have it yet
-					existing := map[string]bool{}
-					for _, rp := range rule.Locations {
-						existing[rp] = true
-					}
-
-					allPkgs, err := discovery.Discover(root)
-					if err != nil {
-						return err
-					}
-
-					var locOptions []huh.Option[string]
-					for _, p := range allPkgs {
-						if !existing[p.Path] {
-							locOptions = append(locOptions, huh.NewOption(p.Path, p.Path))
-						}
-					}
-
-					if len(locOptions) == 0 {
-						fmt.Printf("%s is already tracked for all locations.\n", filename)
-						return nil
-					}
-
-					var selectedLocs []string
+					// Not a promote — prompt for an additional location
+					var loc string
 					if err := huh.NewForm(
 						huh.NewGroup(
-							huh.NewMultiSelect[string]().
-								Title(fmt.Sprintf("Add %s to which locations?", filename)).
-								Options(locOptions...).
-								Value(&selectedLocs),
+							huh.NewInput().
+								Title(fmt.Sprintf("Add %s to which location?", filename)).
+								Placeholder("packages/web").
+								Value(&loc),
 						),
 					).Run(); err != nil {
 						return err
 					}
 
-					if len(selectedLocs) == 0 {
-						fmt.Println("No locations selected, nothing to do.")
+					if loc == "" {
+						fmt.Println("No location entered, nothing to do.")
 						return nil
 					}
 
-					cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, selectedLocs...)
+					cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, loc)
 					if err := config.Save(root, cfg); err != nil {
 						return err
 					}
-					results, err := installer.SyncRule(root, cfg.Rules[i], selectedLocs, false)
+					results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
 					if err != nil {
 						return err
 					}
@@ -137,26 +114,14 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		// New file — prompt for dest folder and locations
-		packages, err := discovery.Discover(root)
-		if err != nil {
-			return err
-		}
-
-		var locOptions []huh.Option[string]
-		for _, p := range packages {
-			locOptions = append(locOptions, huh.NewOption(p.Path, p.Path))
-		}
-
-		var selectedLocs []string
-		var dest string
-
+		// New file — prompt for location and dest folder
+		var loc, dest string
 		if err := huh.NewForm(
 			huh.NewGroup(
-				huh.NewMultiSelect[string]().
-					Title("Which locations should this apply to?").
-					Options(locOptions...).
-					Value(&selectedLocs),
+				huh.NewInput().
+					Title("Location to sync to").
+					Placeholder("packages/auth").
+					Value(&loc),
 				huh.NewInput().
 					Title("Destination folder in each location (leave blank for root)").
 					Placeholder(".claude").
@@ -166,19 +131,19 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		if len(selectedLocs) == 0 {
-			fmt.Println("No locations selected, nothing to do.")
+		if loc == "" {
+			fmt.Println("No location entered, nothing to do.")
 			return nil
 		}
 
-		// Find an existing rule with same dest and locations to group into
+		// Find an existing rule with same dest and location to group into
 		for i, rule := range cfg.Rules {
-			if rule.Dest == dest && sameLocations(rule.Locations, selectedLocs) {
+			if rule.Dest == dest && len(rule.Locations) == 1 && rule.Locations[0] == loc {
 				cfg.Rules[i].Files = append(cfg.Rules[i].Files, filename)
 				if err := config.Save(root, cfg); err != nil {
 					return err
 				}
-				results, err := installer.SyncRule(root, cfg.Rules[i], selectedLocs, false)
+				results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false)
 				if err != nil {
 					return err
 				}
@@ -194,14 +159,14 @@ var addCmd = &cobra.Command{
 		rule := config.Rule{
 			Dest:      dest,
 			Files:     []string{filename},
-			Locations: selectedLocs,
+			Locations: []string{loc},
 		}
 		cfg.Rules = append(cfg.Rules, rule)
 		if err := config.Save(root, cfg); err != nil {
 			return err
 		}
 
-		results, err := installer.SyncRule(root, rule, selectedLocs, false)
+		results, err := installer.SyncRule(root, rule, []string{loc}, false)
 		if err != nil {
 			return err
 		}
@@ -211,22 +176,6 @@ var addCmd = &cobra.Command{
 		}
 		return nil
 	},
-}
-
-func sameLocations(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	m := map[string]bool{}
-	for _, p := range a {
-		m[p] = true
-	}
-	for _, p := range b {
-		if !m[p] {
-			return false
-		}
-	}
-	return true
 }
 
 func init() {

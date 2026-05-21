@@ -22,7 +22,9 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun bool) ([
 	for _, file := range rule.Files {
 		src := ResolvePath(root, file)
 		if _, err := os.Stat(src); err != nil {
-			return nil, fmt.Errorf("source not found: %s", file)
+			if err := touchFile(src); err != nil {
+				return nil, fmt.Errorf("could not create %s: %w", file, err)
+			}
 		}
 
 		for _, loc := range locations {
@@ -72,6 +74,17 @@ func ResolvePath(root, path string) string {
 		return path
 	}
 	return filepath.Join(root, path)
+}
+
+func touchFile(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	return f.Close()
 }
 
 func symlink(src, dest string) error {

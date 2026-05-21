@@ -53,10 +53,14 @@ func TestSyncRuleDryRun(t *testing.T) {
 
 func TestSyncRuleMissingSource(t *testing.T) {
 	root := t.TempDir()
-	rule := config.Rule{Files: []string{"nonexistent.md"}}
-	_, err := SyncRule(root, rule, []string{"."}, false)
-	if err == nil {
-		t.Error("expected error for missing source file")
+	os.MkdirAll(filepath.Join(root, "packages/auth"), 0755)
+	rule := config.Rule{Files: []string{"nonexistent.md"}, Locations: []string{"packages/auth"}}
+	_, err := SyncRule(root, rule, []string{"packages/auth"}, false)
+	if err != nil {
+		t.Fatalf("expected empty file to be created, got error: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "nonexistent.md")); err != nil {
+		t.Error("expected empty source file to be created")
 	}
 }
 
