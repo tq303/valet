@@ -13,9 +13,8 @@ A CLI tool called Valet (`valet`) that manages and propagates config files acros
 - Interactive prompts: huh (charmbracelet)
 
 ## Commands
-- `valet init` — create a `valet.yaml` in the current directory
-- `valet add [file]` — add a file to be synced; prompts for destination location and folder
-- `valet sync` — apply all configured rules. Supports `--dry-run`
+- `valet add [file]` — add a file to be synced; creates `valet.yaml` if it doesn't exist
+- `valet sync [file]` — sync all configured files; pass a path to promote that version as source
 - `valet list` — show file coverage per location. CI-compatible exit codes
 
 ## valet.yaml shape
@@ -40,7 +39,7 @@ rules:
 
 ### Phase 1 — Scaffold ✅
 - Set up Go project structure
-- Wire up Cobra with commands as stubs
+- Wire up Cobra with commands
 - Create basic `valet.yaml` config schema
 
 ### Phase 2 — Core Sync Logic ✅

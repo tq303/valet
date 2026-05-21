@@ -17,11 +17,30 @@ go install github.com/tq303/valet@latest
 ## Usage
 
 ```bash
-valet init        # detect monorepo structure and create valet.yaml
-valet add <file>  # add a file to sync across locations
-valet sync        # sync all configured files to their locations
-valet list        # show coverage across all locations
+valet add <file>              # add a file to sync across locations
+valet sync                    # sync all configured files to their locations
+valet sync <file-in-location> # promote that version as source and sync everywhere
+valet list                    # show coverage across all locations
 ```
+
+---
+
+## Bootstrap flow
+
+The typical setup:
+
+```bash
+# 1. Add a file — creates valet.yaml if it doesn't exist, prompts for location and destination folder
+valet add CLAUDE.md
+
+# 2. Sync — creates empty files at all locations if they don't exist yet
+valet sync
+
+# 3. Edit whichever copy you want, then promote it everywhere
+valet sync packages/auth/CLAUDE.md
+```
+
+After step 2 you have empty placeholder files at every location. Edit the one you want to be the source of truth, then `valet sync <that-path>` to propagate it everywhere.
 
 ---
 
@@ -40,14 +59,14 @@ rules:
     files:
       - CLAUDE.md
     locations:
-      - path: packages/auth
-      - path: packages/api
+      - packages/auth
+      - packages/api
   - dest: .cursor/rules
     files:
       - api-standards.mdc
     locations:
-      - path: packages/auth
-      - path: packages/api
+      - packages/auth
+      - packages/api
 ```
 
 ### Dotfiles / rig
@@ -62,7 +81,7 @@ rules:
       - nvim
       - ghostty
     locations:
-      - path: ~/.config
+      - ~/.config
 ```
 
 ### Shared tooling config across a monorepo
@@ -77,7 +96,7 @@ rules:
       - .prettierrc
       - tsconfig.json
     locations:
-      - path: packages/auth
-      - path: packages/api
-      - path: packages/ui
+      - packages/auth
+      - packages/api
+      - packages/ui
 ```
