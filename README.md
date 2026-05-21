@@ -1,8 +1,10 @@
 # Valet
 
-![version](https://img.shields.io/badge/version-0.2.0-blue) ![build](https://github.com/tq303/valet/actions/workflows/release.yml/badge.svg) ![language](https://img.shields.io/badge/built%20with-Go-00ADD8) ![license](https://img.shields.io/badge/license-none-lightgrey)
+![version](https://img.shields.io/github/v/release/tq303/valet) ![build](https://github.com/tq303/valet/actions/workflows/release.yml/badge.svg) ![language](https://img.shields.io/badge/built%20with-Go-00ADD8) ![license](https://img.shields.io/badge/license-none-lightgrey)
 
-One config. Any file. Anywhere it needs to be.
+Manage and sync files across locations. 
+
+Add any file, URL or repo location once or cache to local file.
 
 Define your files and locations in `valet.yaml`, run `valet sync` to keep everything in step.
 
@@ -29,7 +31,7 @@ go install github.com/tq303/valet@latest
 ## Usage
 
 ```
-Valet manages and syncs files across locations. Add any file or URL once, sync it everywhere.
+Valet manages and syncs files across locations. Add any file, URL or repo location once or cache to local file.
 
 Usage:
   valet [command]
@@ -47,20 +49,16 @@ Use "valet [command] --help" for more information about a command.
 
 ## Bootstrap flow
 
-The typical setup:
-
 ```bash
-# 1. Add a file — creates valet.yaml if it doesn't exist, prompts for location and destination folder
+# Add a file — prompts for locations and dest folder, creates valet.yaml if needed
 valet add .eslintrc.js
 
-# 2. Sync — creates empty files at all locations if they don't exist yet
+# Sync — copies the file to all configured locations
 valet sync
 
-# 3. Edit whichever copy you want, then promote it everywhere
+# Made a change in one of the locations? Promote it as the new source
 valet sync packages/auth/.eslintrc.js
 ```
-
-After step 2 you have empty placeholder files at every location. Edit the one you want to be the source of truth, then `valet sync <that-path>` to propagate it everywhere.
 
 ---
 

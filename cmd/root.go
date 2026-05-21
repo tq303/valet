@@ -9,7 +9,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "valet",
 	Short: "Valet — sync config files across your monorepo",
-	Long:  "Valet manages and syncs files across locations. Add any file or URL once, sync it everywhere.",
+	Long:  "Valet manages and syncs files across locations. Add any file, URL or repo location once or cache to local file.",
 }
 
 func Execute() {
