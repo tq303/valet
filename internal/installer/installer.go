@@ -16,21 +16,27 @@ type Result struct {
 	Skipped bool
 }
 
-// InstallRule copies a single rule's source file into each of the given packages.
+// InstallRule copies a single rule's source file into each of the given packages,
+// skipping any listed in rule.Exclude.
 func InstallRule(root string, rule config.Rule, packages []string, dryRun bool) ([]Result, error) {
 	src := filepath.Join(root, rule.File)
 	if _, err := os.Stat(src); err != nil {
 		return nil, fmt.Errorf("source file not found: %s", rule.File)
 	}
 
+	excluded := map[string]bool{}
+	for _, e := range rule.Exclude {
+		excluded[e] = true
+	}
+
 	var results []Result
 	for _, pkg := range packages {
+		if excluded[pkg] {
+			results = append(results, Result{Package: pkg, File: rule.File, Skipped: true})
+			continue
+		}
 		dest := filepath.Join(root, pkg, rule.Dest)
-		results = append(results, Result{
-			Package: pkg,
-			File:    rule.File,
-			Dest:    dest,
-		})
+		results = append(results, Result{Package: pkg, File: rule.File, Dest: dest})
 		if dryRun {
 			continue
 		}
