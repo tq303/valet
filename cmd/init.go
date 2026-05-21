@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
 	"github.com/charmbracelet/huh"
 	"github.com/tq303/val/internal/config"
 	"github.com/tq303/val/internal/discovery"
 	valrules "github.com/tq303/val/internal/rules"
 	"gopkg.in/yaml.v3"
-
 	"github.com/spf13/cobra"
 )
 

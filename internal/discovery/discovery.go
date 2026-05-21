@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,15 +27,15 @@ func Discover(root string) ([]Package, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(paths) == 0 {
-		return []Package{{
-			Name:  filepath.Base(root),
-			Path:  ".",
-			Tools: detectTools(root, "."),
-		}}, nil
-	}
-
 	var packages []Package
+
+	// Root is always included
+	packages = append(packages, Package{
+		Name:  filepath.Base(root),
+		Path:  ".",
+		Tools: detectTools(root, "."),
+	})
+
 	for _, p := range paths {
 		packages = append(packages, Package{
 			Name:  filepath.Base(p),

@@ -1,20 +1,45 @@
 # Valet — Project Plan
 
 ## Problem
-In a monorepo, AI coding rules for tools like Cursor, Claude Code, and GitHub Copilot often exist at the root but are never wired into individual packages. This causes AI agents to generate code without the correct context or standards applied.
+In a monorepo, config files for tools like Cursor, Claude Code, ESLint, and TypeScript often exist at the root but are never consistently applied across individual packages. This causes drift, inconsistency, and wasted time.
 
 ## Solution
-A CLI tool called Valet (`val`) that discovers monorepo structure, checks rule coverage across packages, and installs rules into each package automatically.
+A CLI tool called Valet (`val`) that manages and propagates config files across monorepo packages. It supports built-in presets (e.g. AI rules) and ad-hoc file syncing for any file type.
 
 ## Tech Stack
 - Language: Go
 - CLI framework: Cobra
 - Config format: YAML (`valet.yaml`)
+- Interactive prompts: huh (charmbracelet)
 
 ## Commands
-- `val init` — initialise Valet in a monorepo, create `valet.yaml`, detect monorepo structure
-- `val check` — health check across all packages, report rule coverage, flag conflicts. CI-compatible exit codes
-- `val install` — apply root rules into each package, generating correct config files per detected AI tool. Supports `--dry-run`
+- `val init` — initialise Valet, detect monorepo structure, configure rules via preset or ad-hoc
+- `val add` — ad-hoc add a file to be synced across packages (e.g. `val add .eslintrc.js`)
+- `val install` — apply all configured rules into each package. Supports `--dry-run`
+- `val add` — ad-hoc add a file to be synced across packages (e.g. `val add .eslintrc.js`)
+- `val list` — show what's configured and coverage per package. CI-compatible exit codes
+
+## Modes
+### Preset mode
+`val init --preset ai` walks through AI-specific rule setup. Knows destination conventions for Claude Code (`.claude/CLAUDE.md`) and Cursor (`.cursor/rules/*.mdc`). More presets can be added over time.
+
+### Ad-hoc mode
+`val add .eslintrc.js` — select a file, choose which packages it applies to, and valet tracks and syncs it. No preset needed.
+
+Both modes write to `valet.yaml` and are applied by `val install`.
+
+## valet.yaml shape
+```yaml
+version: 1
+rules:
+  - file: .rules/.claude/auth-rules.md
+    preset: claude                    # resolves destination automatically
+  - file: .eslintrc.js
+    dest: .eslintrc.js                # explicit destination path in each package
+packages:
+  - path: packages/auth
+  - path: packages/api
+```
 
 ## Phases
 
@@ -25,35 +50,41 @@ A CLI tool called Valet (`val`) that discovers monorepo structure, checks rule c
 
 ### Phase 2 — Monorepo Discovery ✅
 - Parse root `package.json` for `workspaces` field (npm/yarn)
-- Handle both glob patterns and explicit paths
+- Parse `pnpm-workspace.yaml` for pnpm workspaces
+- Fall back to single-package root if no workspaces declared
 - Build internal package map: name, path, detected tooling
 
-### Phase 3 — Rule Scanning & Selection
+### Phase 3 — Rule Scanning & Selection ✅
 - Scan `.rules` folder for `.md` files (tool-agnostic rule content)
-- If no `.rules` folder exists, create it and tell the user to add rules
+- Files in `.rules/.claude/` and `.rules/.cursor/` are pre-assigned to their tool
 - Interactively prompt the user to select which rules to include
-- For each selected rule, prompt which tools it applies to (Claude Code, Cursor)
+- For each unassigned rule, prompt which tools it applies to
 - Write selections into `valet.yaml`
-- Requires an interactive prompt library (e.g. huh)
 
 ### Phase 4 — Install Logic
-- For each discovered package, generate appropriate config files based on detected tools
-- Apply root rules into each package directory
+- Read `valet.yaml` for rules and packages
+- For each package, resolve destination path per rule (preset or explicit `dest`)
+- Generate tool-specific formats where needed (e.g. `.mdc` frontmatter for Cursor)
 - `--dry-run` flag to preview changes before applying
 
-### Phase 5 — Validation Report
-- `val check` outputs structured health check
-- Shows rule coverage per package
-- Flags missing or conflicting rules
+### Phase 5 — Ad-hoc File Syncing (`val add`)
+- `val add <file>` — pick a file, select target packages, write to `valet.yaml`
+- Works for any file type (ESLint, Prettier, tsconfig, etc.)
+- `val install` applies it the same as preset rules
+
+### Phase 6 — List Command
+- `val list` outputs structured coverage report
+- Shows rule/file coverage per package
+- Flags missing or outdated files
+- CI-compatible exit codes
 
 ## Non-Goals (MVP)
-- No marketplace or CDN skill discovery
+- No marketplace or CDN preset discovery
 - No MCP validation
 - No Cargo/Rust monorepo support
 
 ## Future
-- `val search` and `val add` — search and install rule packs from a CDN
+- `val search` and `val add <preset>` — search and install community presets from a CDN
 - Cargo/Rust monorepo support
 - MCP validation and health checks
 - Pre-execution agent orchestration layer
-

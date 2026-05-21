@@ -2,14 +2,13 @@ package cmd
 
 import (
 	"os"
-
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "val",
-	Short: "Valet — AI rule coverage for monorepos",
-	Long:  "Valet discovers your monorepo structure, validates AI rule coverage across packages, and installs rules into each package automatically.",
+	Short: "Valet — sync config files across your monorepo",
+	Long:  "Valet manages and syncs config files across your monorepo packages. Add any file once, install it everywhere.",
 }
 
 func Execute() {

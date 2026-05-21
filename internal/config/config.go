@@ -9,7 +9,8 @@ const (
 
 type Rule struct {
 	File  string `yaml:"file"`
-	Tools []Tool `yaml:"tools"`
+	Dest  string `yaml:"dest,omitempty"`
+	Tools []Tool `yaml:"tools,omitempty"`
 }
 
 type Package struct {
