@@ -28,6 +28,7 @@ var addCmd = &cobra.Command{
 		if len(args) == 1 {
 			file = args[0]
 		} else {
+			fmt.Println("Tip: use `valet add <file>` for tab completion.")
 			if err := huh.NewForm(
 				huh.NewGroup(
 					huh.NewInput().

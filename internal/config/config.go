@@ -12,7 +12,6 @@ const Filename = "valet.yaml"
 type Rule struct {
 	File    string   `yaml:"file"`
 	Dest    string   `yaml:"dest,omitempty"`
-	Preset  string   `yaml:"preset,omitempty"`
 	Exclude []string `yaml:"exclude,omitempty"`
 }
 
