@@ -10,6 +10,22 @@ Define your files and locations in `valet.yaml`, run `valet sync` to keep everyt
 
 ## Install
 
+**macOS (Apple Silicon)**
+```bash
+curl -L https://github.com/tq303/valet/releases/latest/download/valet-darwin-arm64 -o /usr/local/bin/valet && chmod +x /usr/local/bin/valet
+```
+
+**macOS (Intel)**
+```bash
+curl -L https://github.com/tq303/valet/releases/latest/download/valet-darwin-amd64 -o /usr/local/bin/valet && chmod +x /usr/local/bin/valet
+```
+
+**Linux**
+```bash
+curl -L https://github.com/tq303/valet/releases/latest/download/valet-linux-amd64 -o /usr/local/bin/valet && chmod +x /usr/local/bin/valet
+```
+
+Or with Go:
 ```bash
 go install github.com/tq303/valet@latest
 ```
