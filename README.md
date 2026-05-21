@@ -91,7 +91,7 @@ rules:
 
 ### Dotfiles / rig
 
-Symlink your config folders and dotfiles from a single rig repo:
+Symlink your config folders and dotfiles from a single rig repo. On Windows, `link: true` falls back to copy:
 
 ```yaml
 version: 1

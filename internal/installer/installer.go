@@ -188,12 +188,8 @@ func touchFile(path string) error {
 	return f.Close()
 }
 
-func symlink(src, dest string) error {
-	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-		return err
-	}
-	os.Remove(dest)
-	return os.Symlink(src, dest)
+func mkdirForDest(dest string) error {
+	return os.MkdirAll(filepath.Dir(dest), 0755)
 }
 
 func copyAny(src, dest string) error {
