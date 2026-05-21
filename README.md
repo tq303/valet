@@ -1,6 +1,6 @@
 # Valet
 
-![version](https://img.shields.io/badge/version-0.2.0-blue) ![language](https://img.shields.io/badge/built%20with-Go-00ADD8) ![license](https://img.shields.io/badge/license-none-lightgrey)
+![version](https://img.shields.io/badge/version-0.2.0-blue) ![build](https://github.com/tq303/valet/actions/workflows/release.yml/badge.svg) ![language](https://img.shields.io/badge/built%20with-Go-00ADD8) ![license](https://img.shields.io/badge/license-none-lightgrey)
 
 One config. Any file. Anywhere it needs to be.
 
@@ -10,6 +10,18 @@ Define your files and locations in `valet.yaml`, run `valet sync` to keep everyt
 
 ## Install
 
+**macOS (Apple Silicon)**
+```bash
+curl -L https://github.com/tq303/valet/releases/latest/download/valet-darwin-arm64 -o /usr/local/bin/valet && chmod +x /usr/local/bin/valet
+```
+
+
+**Linux**
+```bash
+curl -L https://github.com/tq303/valet/releases/latest/download/valet-linux-amd64 -o /usr/local/bin/valet && chmod +x /usr/local/bin/valet
+```
+
+Or with Go:
 ```bash
 go install github.com/tq303/valet@latest
 ```
