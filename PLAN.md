@@ -58,11 +58,18 @@ rules:
 - CI-compatible exit codes
 
 ## Non-Goals (MVP)
-- No monorepo auto-detection (can be added as an extension)
+- No monorepo auto-detection
+- No remote sources
 - No preset system (use `valet.yaml` directly)
-- No marketplace or CDN discovery
 
 ## Future
-- Monorepo workspace detection (npm/yarn/pnpm) to pre-fill location options
-- Community presets via CDN
-- MCP validation and health checks
+
+### Remote sources
+`valet add <url>` fetches a file (or directory) from a URL and tracks it in `valet.yaml`. `valet sync` re-fetches to stay current. Enables a platform team to host canonical configs centrally — devs run one command in any new repo to pull them in and stay up to date.
+
+Supported URL formats TBD (raw file, GitHub tree, gist).
+
+### Monorepo workspace detection
+Auto-detect packages from npm/yarn/pnpm workspace config to pre-fill location options during `valet add`. Lower priority — users can type paths directly and the yaml is easy to edit by hand.
+
+### MCP validation and health checks

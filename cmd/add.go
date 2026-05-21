@@ -97,6 +97,13 @@ var addCmd = &cobra.Command{
 						return nil
 					}
 
+					for _, existing := range rule.Locations {
+						if existing == loc {
+							fmt.Printf("%s is already synced to %s.\n", filename, loc)
+							return nil
+						}
+					}
+
 					cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, loc)
 					if err := config.Save(root, cfg); err != nil {
 						return err
