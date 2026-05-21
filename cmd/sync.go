@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/tq303/val/internal/config"
@@ -11,10 +12,10 @@ import (
 
 var dryRun bool
 
-var installCmd = &cobra.Command{
-	Use:   "install",
-	Short: "Apply all configured files into each package",
-	Long:  "Reads valet.yaml and installs every configured file into its target packages.",
+var syncCmd = &cobra.Command{
+	Use:   "sync",
+	Short: "Sync all configured files into their packages",
+	Long:  "Reads valet.yaml and syncs every configured file into its target packages.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		root, err := os.Getwd()
 		if err != nil {
@@ -26,11 +27,11 @@ var installCmd = &cobra.Command{
 			return err
 		}
 		if len(cfg.Rules) == 0 {
-			fmt.Println("No rules configured — run `val init` or `val add` first.")
+			fmt.Println("No files configured — run `valet add <file>` to get started.")
 			return nil
 		}
 
-		results, err := installer.InstallAll(root, cfg, dryRun)
+		results, err := installer.SyncAll(root, cfg, dryRun)
 		if err != nil {
 			return err
 		}
@@ -38,16 +39,16 @@ var installCmd = &cobra.Command{
 		if dryRun {
 			fmt.Println("Dry run — no files written:\n")
 		} else {
-			fmt.Println("Installed:\n")
+			fmt.Println("Synced:\n")
 		}
 		for _, r := range results {
-			fmt.Printf("  %s → %s\n", r.File, r.Dest)
+			fmt.Printf("  %s → %s\n", filepath.Base(r.File), r.Dest)
 		}
 		return nil
 	},
 }
 
 func init() {
-	installCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without applying them")
-	rootCmd.AddCommand(installCmd)
+	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without applying them")
+	rootCmd.AddCommand(syncCmd)
 }

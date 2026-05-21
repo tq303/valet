@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/tq303/val/internal/config"
@@ -28,8 +29,8 @@ var listCmd = &cobra.Command{
 			return nil
 		}
 
-		fmt.Printf("%-35s %-20s %s\n", "FILE", "PACKAGE", "STATUS")
-		fmt.Printf("%-35s %-20s %s\n", "----", "-------", "------")
+		fmt.Printf("%-30s %-20s %s\n", "FILE", "PACKAGE", "STATUS")
+		fmt.Printf("%-30s %-20s %s\n", "----", "-------", "------")
 
 		exitCode := 0
 		for _, rule := range cfg.Rules {
@@ -37,22 +38,22 @@ var listCmd = &cobra.Command{
 			for i, p := range rule.Packages {
 				pkgs[i] = p.Path
 			}
-			results, err := installer.InstallFile(root, rule, pkgs, true)
+			results, err := installer.SyncRule(root, rule, pkgs, true)
 			if err != nil {
 				return err
 			}
 			for _, r := range results {
 				if _, err := os.Stat(r.Dest); os.IsNotExist(err) {
-					fmt.Printf("%-35s %-20s MISSING\n", rule.File, r.Package)
+					fmt.Printf("%-30s %-20s MISSING\n", filepath.Base(r.File), r.Package)
 					exitCode = 1
 				} else {
-					fmt.Printf("%-35s %-20s ok\n", rule.File, r.Package)
+					fmt.Printf("%-30s %-20s ok\n", filepath.Base(r.File), r.Package)
 				}
 			}
 		}
 
 		if exitCode != 0 {
-			fmt.Println("\nRun `valet install` to fix missing files.")
+			fmt.Println("\nRun `valet sync` to fix missing files.")
 			os.Exit(exitCode)
 		}
 		return nil

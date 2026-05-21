@@ -14,8 +14,8 @@ type RulePackage struct {
 }
 
 type Rule struct {
-	File     string        `yaml:"file"`
 	Dest     string        `yaml:"dest,omitempty"`
+	Files    []string      `yaml:"files"`
 	Packages []RulePackage `yaml:"packages"`
 }
 
