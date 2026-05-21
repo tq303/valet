@@ -16,14 +16,19 @@ go install github.com/tq303/valet@latest
 
 ## Usage
 
-```bash
-valet add <file>              # add a file or folder to sync across locations
-valet add <git-repo-url>      # add files from a git repo
-valet sync                    # sync changed files to their locations
-valet sync -f                 # force overwrite all destinations
-valet sync -d                 # dry run — show what would be written (* = would change)
-valet sync <file-in-location> # promote that version as source and sync everywhere
-valet list                    # show coverage across all locations
+```
+Valet manages and syncs files across locations. Add any file or URL once, sync it everywhere.
+
+Usage:
+  valet [command]
+
+Available Commands:
+  add         Add a file to be synced across locations
+  list        Show configured files and coverage per package
+  remove      Remove a file from valet.yaml
+  sync        Sync all configured files into their locations
+
+Use "valet [command] --help" for more information about a command.
 ```
 
 ---

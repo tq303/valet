@@ -13,20 +13,35 @@ import (
 )
 
 var once bool
+var locationFlags []string
+var destFlag string
 
 var addCmd = &cobra.Command{
-	Use:   "add [file]",
+	Use:   "add [files...]",
 	Short: "Add a file to be synced across locations",
 	Long:  "Add any file or URL to be tracked and synced. If already tracked, promotes or extends it.",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		root, err := os.Getwd()
 		if err != nil {
 			return err
 		}
 
+		// Non-interactive mode: files + -l flags provided
+		if len(locationFlags) > 0 {
+			if len(args) == 0 {
+				return fmt.Errorf("at least one file is required with --location")
+			}
+			cfg, err := config.Load(root)
+			if err != nil {
+				return err
+			}
+			return addWithFlags(root, cfg, args, locationFlags, destFlag, once)
+		}
+
+		// Collect single file (prompt if not provided)
 		var file string
-		if len(args) == 1 {
+		if len(args) >= 1 {
 			file = args[0]
 		} else {
 			fmt.Println("Tip: use `valet add <file>` for tab completion.")
@@ -40,6 +55,15 @@ var addCmd = &cobra.Command{
 			).Run(); err != nil {
 				return err
 			}
+		}
+
+		// Multiple files without -l: prompt once, apply to all
+		if len(args) > 1 {
+			cfg, err := config.Load(root)
+			if err != nil {
+				return err
+			}
+			return addMultipleFiles(root, cfg, args, once)
 		}
 
 		if once {
@@ -223,6 +247,98 @@ var addCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+func addWithFlags(root string, cfg *config.Config, files, locs []string, dest string, ignoreConfig bool) error {
+	for _, f := range files {
+		if !installer.IsURL(f) && !installer.IsGitRepo(f) {
+			src := installer.ResolvePath(root, f)
+			if _, err := os.Stat(src); err != nil {
+				return fmt.Errorf("file not found: %s", f)
+			}
+		}
+	}
+
+	rule := config.Rule{Dest: dest, Files: files, Locations: locs}
+
+	if !ignoreConfig {
+		for i, r := range cfg.Rules {
+			if r.Dest == dest && locationsMatch(r.Locations, locs) {
+				cfg.Rules[i].Files = append(cfg.Rules[i].Files, files...)
+				if err := config.Save(root, cfg); err != nil {
+					return err
+				}
+				rule = cfg.Rules[i]
+				break
+			}
+		}
+		if len(rule.Files) == len(files) {
+			cfg.Rules = append(cfg.Rules, rule)
+			if err := config.Save(root, cfg); err != nil {
+				return err
+			}
+		}
+	}
+
+	results, err := installer.SyncRule(root, rule, locs, false, true)
+	if err != nil {
+		return err
+	}
+	fmt.Println()
+	for _, r := range results {
+		fmt.Printf("  %s → %s\n", installer.FileName(r.File), r.Dest)
+	}
+	return nil
+}
+
+func addMultipleFiles(root string, cfg *config.Config, files []string, ignoreConfig bool) error {
+	for _, f := range files {
+		if !installer.IsURL(f) && !installer.IsGitRepo(f) {
+			src := installer.ResolvePath(root, f)
+			if _, err := os.Stat(src); err != nil {
+				return fmt.Errorf("file not found: %s", f)
+			}
+		}
+	}
+
+	var loc, dest string
+	if err := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Location to sync to").
+				Placeholder("packages/auth").
+				Value(&loc),
+			huh.NewInput().
+				Title("Destination folder (leave blank for root)").
+				Placeholder(".claude").
+				Value(&dest),
+		),
+	).Run(); err != nil {
+		return err
+	}
+	if loc == "" {
+		fmt.Println("No location entered, nothing to do.")
+		return nil
+	}
+
+	locs, err := promptAdditionalLocations([]string{loc})
+	if err != nil {
+		return err
+	}
+
+	return addWithFlags(root, cfg, files, locs, dest, ignoreConfig)
+}
+
+func locationsMatch(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func addFromRepo(root string, cfg *config.Config, repoURL string) error {
@@ -477,5 +593,7 @@ func promptAdditionalLocations(locs []string) ([]string, error) {
 
 func init() {
 	addCmd.Flags().BoolVarP(&once, "ignore", "i", false, "Sync without adding to valet.yaml")
+	addCmd.Flags().StringArrayVarP(&locationFlags, "location", "l", nil, "Location to sync to (repeatable)")
+	addCmd.Flags().StringVar(&destFlag, "dest", "", "Destination folder within each location")
 	rootCmd.AddCommand(addCmd)
 }
