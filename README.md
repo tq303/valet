@@ -2,9 +2,9 @@
 
 ![version](https://img.shields.io/badge/version-0.1.0-blue) ![language](https://img.shields.io/badge/built%20with-Go-00ADD8) ![license](https://img.shields.io/badge/license-none-lightgrey)
 
-Sync any file to any location. Add it once, keep it everywhere.
+One config. Any file. Anywhere it needs to be.
 
-Valet tracks files and syncs them across locations — monorepo packages, projects, or anywhere on your filesystem. Built-in support for AI coding tools like Claude Code and Cursor.
+Define your files and locations in `valet.yaml`, run `valet sync` to keep everything in step.
 
 ---
 
@@ -23,7 +23,15 @@ valet sync        # sync all configured files to their locations
 valet list        # show coverage across all locations
 ```
 
-## valet.yaml
+---
+
+## Examples
+
+Here are some `valet.yaml` examples for common scenarios.
+
+### AI rules for a monorepo
+
+Keep Claude Code and Cursor rules consistent across every package:
 
 ```yaml
 version: 1
@@ -34,10 +42,42 @@ rules:
     locations:
       - path: packages/auth
       - path: packages/api
-  - files:
-      - .eslintrc.js
+  - dest: .cursor/rules
+    files:
+      - api-standards.mdc
     locations:
       - path: packages/auth
       - path: packages/api
-      - path: ../other-project
+```
+
+### Dotfiles / rig
+
+Symlink your config folders to `~/.config` from a single location repo:
+
+```yaml
+version: 1
+rules:
+  - link: true
+    files:
+      - nvim
+      - ghostty
+    locations:
+      - path: ~/.config
+```
+
+### Shared tooling config across a monorepo
+
+Keep ESLint, Prettier, and TypeScript config consistent across every package:
+
+```yaml
+version: 1
+rules:
+  - files:
+      - .eslintrc.js
+      - .prettierrc
+      - tsconfig.json
+    locations:
+      - path: packages/auth
+      - path: packages/api
+      - path: packages/ui
 ```
