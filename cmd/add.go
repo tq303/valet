@@ -8,8 +8,8 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
-	"github.com/tq303/val/internal/config"
-	"github.com/tq303/val/internal/installer"
+	"github.com/tq303/valet/internal/config"
+	"github.com/tq303/valet/internal/installer"
 )
 
 var addCmd = &cobra.Command{

@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tq303/val/internal/config"
+	"github.com/tq303/valet/internal/config"
 )
 
 type Result struct {

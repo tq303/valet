@@ -1,6 +1,6 @@
 package main
 
-import "github.com/tq303/val/cmd"
+import "github.com/tq303/valet/cmd"
 
 func main() {
 	cmd.Execute()

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tq303/val/internal/config"
+	"github.com/tq303/valet/internal/config"
 )
 
 func setup(t *testing.T) (root string, rule config.Rule) {

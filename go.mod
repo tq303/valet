@@ -1,4 +1,4 @@
-module github.com/tq303/val
+module github.com/tq303/valet
 
 go 1.26.3
 
