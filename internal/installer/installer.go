@@ -16,26 +16,24 @@ type Result struct {
 	Skipped bool
 }
 
-// InstallFile copies a single rule's source file into each of the given packages,
-// skipping any listed in rule.Exclude.
+// InstallFile copies a rule's source file into the given packages.
+// File path can be relative to root or an absolute/external path.
 func InstallFile(root string, rule config.Rule, packages []string, dryRun bool) ([]Result, error) {
-	src := filepath.Join(root, rule.File)
+	src := rule.File
+	if !filepath.IsAbs(src) {
+		src = filepath.Join(root, src)
+	}
 	if _, err := os.Stat(src); err != nil {
 		return nil, fmt.Errorf("source file not found: %s", rule.File)
 	}
 
-	excluded := map[string]bool{}
-	for _, e := range rule.Exclude {
-		excluded[e] = true
-	}
-
 	var results []Result
 	for _, pkg := range packages {
-		if excluded[pkg] {
-			results = append(results, Result{Package: pkg, File: rule.File, Skipped: true})
-			continue
+		destDir := pkg
+		if rule.Dest != "" {
+			destDir = filepath.Join(pkg, rule.Dest)
 		}
-		dest := filepath.Join(root, pkg, rule.Dest)
+		dest := filepath.Join(root, destDir, filepath.Base(rule.File))
 		results = append(results, Result{Package: pkg, File: rule.File, Dest: dest})
 		if dryRun {
 			continue
@@ -47,16 +45,15 @@ func InstallFile(root string, rule config.Rule, packages []string, dryRun bool) 
 	return results, nil
 }
 
-// InstallAll applies every rule in cfg to its target packages.
+// InstallAll applies every rule in cfg to its own package list.
 func InstallAll(root string, cfg *config.Config, dryRun bool) ([]Result, error) {
-	pkgPaths := make([]string, len(cfg.Packages))
-	for i, p := range cfg.Packages {
-		pkgPaths[i] = p.Path
-	}
-
 	var all []Result
 	for _, rule := range cfg.Rules {
-		results, err := InstallFile(root, rule, pkgPaths, dryRun)
+		pkgs := make([]string, len(rule.Packages))
+		for i, p := range rule.Packages {
+			pkgs[i] = p.Path
+		}
+		results, err := InstallFile(root, rule, pkgs, dryRun)
 		if err != nil {
 			return nil, err
 		}

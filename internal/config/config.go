@@ -9,21 +9,19 @@ import (
 
 const Filename = "valet.yaml"
 
-type Rule struct {
-	File    string   `yaml:"file"`
-	Dest    string   `yaml:"dest,omitempty"`
-	Exclude []string `yaml:"exclude,omitempty"`
+type RulePackage struct {
+	Path string `yaml:"path"`
 }
 
-type Package struct {
-	Path    string `yaml:"path"`
-	Context string `yaml:"context,omitempty"`
+type Rule struct {
+	File     string        `yaml:"file"`
+	Dest     string        `yaml:"dest,omitempty"`
+	Packages []RulePackage `yaml:"packages"`
 }
 
 type Config struct {
-	Version  int       `yaml:"version"`
-	Rules    []Rule    `yaml:"rules"`
-	Packages []Package `yaml:"packages"`
+	Version int    `yaml:"version"`
+	Rules   []Rule `yaml:"rules"`
 }
 
 func Load(root string) (*Config, error) {

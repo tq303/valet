@@ -30,15 +30,7 @@ var initCmd = &cobra.Command{
 			fmt.Printf("  %s\n", p.Path)
 		}
 
-		var configPackages []config.Package
-		for _, p := range packages {
-			configPackages = append(configPackages, config.Package{Path: p.Path})
-		}
-
-		cfg := config.Config{
-			Version:  1,
-			Packages: configPackages,
-		}
+		cfg := config.Config{Version: 1}
 		if err := config.Save(root, &cfg); err != nil {
 			return fmt.Errorf("could not write valet.yaml: %w", err)
 		}

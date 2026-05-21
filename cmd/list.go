@@ -24,13 +24,8 @@ var listCmd = &cobra.Command{
 			return err
 		}
 		if len(cfg.Rules) == 0 {
-			fmt.Println("No files configured — run `val init` or `val add` first.")
+			fmt.Println("No files configured — run `valet add <file>` to get started.")
 			return nil
-		}
-
-		pkgPaths := make([]string, len(cfg.Packages))
-		for i, p := range cfg.Packages {
-			pkgPaths[i] = p.Path
 		}
 
 		fmt.Printf("%-35s %-20s %s\n", "FILE", "PACKAGE", "STATUS")
@@ -38,15 +33,15 @@ var listCmd = &cobra.Command{
 
 		exitCode := 0
 		for _, rule := range cfg.Rules {
-			results, err := installer.InstallFile(root, rule, pkgPaths, true)
+			pkgs := make([]string, len(rule.Packages))
+			for i, p := range rule.Packages {
+				pkgs[i] = p.Path
+			}
+			results, err := installer.InstallFile(root, rule, pkgs, true)
 			if err != nil {
 				return err
 			}
 			for _, r := range results {
-				if r.Skipped {
-					fmt.Printf("%-35s %-20s excluded\n", rule.File, r.Package)
-					continue
-				}
 				if _, err := os.Stat(r.Dest); os.IsNotExist(err) {
 					fmt.Printf("%-35s %-20s MISSING\n", rule.File, r.Package)
 					exitCode = 1
@@ -57,7 +52,7 @@ var listCmd = &cobra.Command{
 		}
 
 		if exitCode != 0 {
-			fmt.Println("\nRun `val install` to fix missing files.")
+			fmt.Println("\nRun `valet install` to fix missing files.")
 			os.Exit(exitCode)
 		}
 		return nil

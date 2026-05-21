@@ -23,12 +23,21 @@ func TestSaveAndLoad(t *testing.T) {
 	original := &Config{
 		Version: 1,
 		Rules: []Rule{
-			{File: ".eslintrc.js", Dest: ".eslintrc.js"},
-			{File: ".rules/.claude/auth.md", Preset: "claude", Dest: ".claude/CLAUDE.md", Exclude: []string{"packages/ui"}},
-		},
-		Packages: []Package{
-			{Path: "."},
-			{Path: "packages/auth"},
+			{
+				File: ".eslintrc.js",
+				Name: ".eslintrc.js",
+				Packages: []RulePackage{
+					{Path: "."},
+					{Path: "packages/auth"},
+				},
+			},
+			{
+				File: ".rules/.claude/auth.md",
+				Name: "auth.md",
+				Packages: []RulePackage{
+					{Path: "packages/api"},
+				},
+			},
 		},
 	}
 
@@ -46,10 +55,7 @@ func TestSaveAndLoad(t *testing.T) {
 	if len(loaded.Rules) != 2 {
 		t.Errorf("expected 2 rules, got %d", len(loaded.Rules))
 	}
-	if loaded.Rules[1].Exclude[0] != "packages/ui" {
-		t.Errorf("exclude not preserved, got %v", loaded.Rules[1].Exclude)
-	}
-	if len(loaded.Packages) != 2 {
-		t.Errorf("expected 2 packages, got %d", len(loaded.Packages))
+	if len(loaded.Rules[0].Packages) != 2 {
+		t.Errorf("expected 2 packages on first rule, got %d", len(loaded.Rules[0].Packages))
 	}
 }
