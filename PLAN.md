@@ -13,20 +13,20 @@ A CLI tool called Valet (`val`) that manages and propagates config files across 
 - Interactive prompts: huh (charmbracelet)
 
 ## Commands
-- `val init` — initialise Valet, detect monorepo structure, configure rules via preset or ad-hoc
-- `val add` — ad-hoc add a file to be synced across packages (e.g. `val add .eslintrc.js`)
-- `val install` — apply all configured rules into each package. Supports `--dry-run`
-- `val add` — ad-hoc add a file to be synced across packages (e.g. `val add .eslintrc.js`)
-- `val list` — show what's configured and coverage per package. CI-compatible exit codes
+- `valet init` — initialise Valet, detect monorepo structure, configure rules via preset or ad-hoc
+- `valet add` — ad-hoc add a file to be synced across packages (e.g. `valet add .eslintrc.js`)
+- `valet install` — apply all configured rules into each package. Supports `--dry-run`
+- `valet add` — ad-hoc add a file to be synced across packages (e.g. `valet add .eslintrc.js`)
+- `valet list` — show what's configured and coverage per package. CI-compatible exit codes
 
 ## Modes
 ### Preset mode
-`val init --preset ai` walks through AI-specific rule setup. Knows destination conventions for Claude Code (`.claude/CLAUDE.md`) and Cursor (`.cursor/rules/*.mdc`). More presets can be added over time.
+`valet init --preset ai` walks through AI-specific rule setup. Knows destination conventions for Claude Code (`.claude/CLAUDE.md`) and Cursor (`.cursor/rules/*.mdc`). More presets can be added over time.
 
 ### Ad-hoc mode
-`val add .eslintrc.js` — select a file, choose which packages it applies to, and valet tracks and syncs it. No preset needed.
+`valet add .eslintrc.js` — select a file, choose which packages it applies to, and valet tracks and syncs it. No preset needed.
 
-Both modes write to `valet.yaml` and are applied by `val install`.
+Both modes write to `valet.yaml` and are applied by `valet install`.
 
 ## valet.yaml shape
 ```yaml
@@ -67,13 +67,13 @@ packages:
 - Generate tool-specific formats where needed (e.g. `.mdc` frontmatter for Cursor)
 - `--dry-run` flag to preview changes before applying
 
-### Phase 5 — Ad-hoc File Syncing (`val add`) ✅
-- `val add <file>` — pick a file, select target packages, write to `valet.yaml`
+### Phase 5 — Ad-hoc File Syncing (`valet add`) ✅
+- `valet add <file>` — pick a file, select target packages, write to `valet.yaml`
 - Works for any file type (ESLint, Prettier, tsconfig, etc.)
-- `val install` applies it the same as preset rules
+- `valet install` applies it the same as preset rules
 
 ### Phase 6 — List Command ✅
-- `val list` outputs structured coverage report
+- `valet list` outputs structured coverage report
 - Shows rule/file coverage per package
 - Flags missing or outdated files
 - CI-compatible exit codes
@@ -84,7 +84,7 @@ packages:
 - No Cargo/Rust monorepo support
 
 ## Future
-- `val search` and `val add <preset>` — search and install community presets from a CDN
+- `valet search` and `valet add <preset>` — search and install community presets from a CDN
 - Cargo/Rust monorepo support
 - MCP validation and health checks
 - Pre-execution agent orchestration layer

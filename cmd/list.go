@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/tq303/val/internal/config"
 	"github.com/tq303/val/internal/installer"

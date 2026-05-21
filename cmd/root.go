@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"os"
+
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "val",
+	Use:   "valet",
 	Short: "Valet — sync config files across your monorepo",
 	Long:  "Valet manages and syncs config files across your monorepo packages. Add any file once, install it everywhere.",
 }

@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/charmbracelet/huh"
+	"github.com/spf13/cobra"
 	"github.com/tq303/val/internal/config"
 	"github.com/tq303/val/internal/discovery"
 	"github.com/tq303/val/internal/installer"
-	"github.com/spf13/cobra"
 )
 
 var addCmd = &cobra.Command{

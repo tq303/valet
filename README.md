@@ -11,14 +11,14 @@ Valet manages rule files, editor config, linting config, or any file that should
 ## Install
 
 ```bash
-go install github.com/tq303/val@latest
+go install github.com/tq303/valet@latest
 ```
 
 ## Usage
 
 ```bash
-val init        # detect monorepo structure and configure rules
-val add <file>  # add a file to sync across packages
-val install     # apply everything in valet.yaml
-val list        # show coverage across packages
+valet init        # detect monorepo structure and configure rules
+valet add <file>  # add a file to sync across packages
+valet install     # apply everything in valet.yaml
+valet list        # show coverage across packages
 ```
