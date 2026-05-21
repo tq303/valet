@@ -27,7 +27,7 @@ var listCmd = &cobra.Command{
 			return nil
 		}
 
-		fmt.Printf("%-30s %-20s %s\n", "FILE", "PACKAGE", "STATUS")
+		fmt.Printf("%-30s %-20s %s\n", "FILE", "LOCATION", "STATUS")
 		fmt.Printf("%-30s %-20s %s\n", "----", "-------", "------")
 
 		exitCode := 0
