@@ -7,7 +7,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "valet",
+	Use:   "val",
 	Short: "Valet — sync config files across your monorepo",
 	Long:  "Valet manages and syncs files across locations. Add any file, URL or repo location once or cache to local file.",
 }

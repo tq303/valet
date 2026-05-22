@@ -34,9 +34,9 @@ jobs:
         run: |
           EXT=""
           [ "${{ matrix.os }}" = "windows" ] && EXT=".exe"
-          go build -o valet-${{ matrix.os }}-${{ matrix.arch }}${EXT} .
+          go build -o val-${{ matrix.os }}-${{ matrix.arch }}${EXT} .
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
-          files: valet-${{ matrix.os }}-${{ matrix.arch }}*
+          files: val-${{ matrix.os }}-${{ matrix.arch }}*

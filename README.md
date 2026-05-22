@@ -4,7 +4,7 @@
 
 Manage and sync files across locations.
 
-Add any file, URL, git repo, or release archive once. Define locations in `valet.yaml`, run `valet sync` to keep everything in step.
+Add any file, URL, git repo, or release archive once. Define locations in `valet.yaml`, run `val sync` to keep everything in step.
 
 ---
 
@@ -12,12 +12,12 @@ Add any file, URL, git repo, or release archive once. Define locations in `valet
 
 **macOS (Apple Silicon)**
 ```bash
-curl -L https://github.com/tq303/valet/releases/latest/download/valet-darwin-arm64 -o /usr/local/bin/valet && chmod +x /usr/local/bin/valet
+curl -L https://github.com/tq303/valet/releases/latest/download/val-darwin-arm64 -o /usr/local/bin/val && chmod +x /usr/local/bin/val
 ```
 
 **Linux**
 ```bash
-curl -L https://github.com/tq303/valet/releases/latest/download/valet-linux-amd64 -o /usr/local/bin/valet && chmod +x /usr/local/bin/valet
+curl -L https://github.com/tq303/valet/releases/latest/download/val-linux-amd64 -o /usr/local/bin/val && chmod +x /usr/local/bin/val
 ```
 
 Or with Go:
@@ -31,7 +31,7 @@ go install github.com/tq303/valet@latest
 Valet manages and syncs files across locations. Add any file, URL or repo location once or cache to local file.
 
 Usage:
-  valet [command]
+  val [command]
 
 Available Commands:
   add         Add a file to be synced across locations
@@ -39,7 +39,7 @@ Available Commands:
   remove      Remove a file from valet.yaml
   sync        Sync all configured files into their locations
 
-Use "valet [command] --help" for more information about a command.
+Use "val [command] --help" for more information about a command.
 ```
 
 ---
@@ -48,13 +48,13 @@ Use "valet [command] --help" for more information about a command.
 
 ```bash
 # Add a file — prompts for locations and dest folder, creates valet.yaml if needed
-valet add config.js
+val add config.js
 
 # Sync — copies the file to all configured locations
-valet sync
+val sync
 
 # Made a change in one of the locations? Promote it as the new source
-valet sync packages/auth/config.js
+val sync packages/auth/config.js
 ```
 
 ---
@@ -118,7 +118,7 @@ rules:
 
 ### Files from a git repo
 
-Track files or folders from any git repo. On `valet sync`, the repo is cloned to `/tmp/valet/repos/` and kept up to date — folder structure and internal references are preserved:
+Track files or folders from any git repo. On `val sync`, the repo is cloned to `/tmp/valet/repos/` and kept up to date — folder structure and internal references are preserved:
 
 ```yaml
 version: 1
