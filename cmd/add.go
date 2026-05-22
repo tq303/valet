@@ -22,7 +22,11 @@ var addCmd = &cobra.Command{
 	Long:  "Add any file or URL to be tracked and synced. If already tracked, promotes or extends it.",
 	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		root, err := os.Getwd()
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		root, err := config.FindRoot(cwd)
 		if err != nil {
 			return err
 		}

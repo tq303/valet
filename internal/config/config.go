@@ -24,6 +24,28 @@ type Config struct {
 	Rules   []Rule `yaml:"rules"`
 }
 
+func FindRoot(cwd string) (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return cwd, nil
+	}
+	dir := cwd
+	for {
+		if _, err := os.Stat(filepath.Join(dir, Filename)); err == nil {
+			return dir, nil
+		}
+		if dir == home {
+			break
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return cwd, nil
+}
+
 func Load(root string) (*Config, error) {
 	data, err := os.ReadFile(filepath.Join(root, Filename))
 	if os.IsNotExist(err) {

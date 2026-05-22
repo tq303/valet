@@ -19,7 +19,11 @@ var syncCmd = &cobra.Command{
 	Long:  "Reads valet.yaml and syncs every configured file into its target locations. Pass a file path to promote that version as the source before syncing.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		root, err := os.Getwd()
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		root, err := config.FindRoot(cwd)
 		if err != nil {
 			return err
 		}

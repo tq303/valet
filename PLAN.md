@@ -88,6 +88,11 @@ rules:
 - Cache is keyed by URL hash — re-download only on `-f`; content-aware copy skips unchanged files
 - `valet add <archive-url>` starts the add flow prompting for extract paths, location, and dest
 
+### Phase 9 — Config Discovery
+- Walk up from `os.Getwd()` looking for `valet.yaml`, stopping at `os.UserHomeDir()`
+- Allows running valet from any subdirectory of the project root
+- If no config is found, fall back to current directory (existing behaviour for `valet add` / first-time init)
+
 ## Non-Goals (MVP)
 - No monorepo auto-detection
 - No preset system (use `valet.yaml` directly)

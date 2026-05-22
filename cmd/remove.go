@@ -18,7 +18,11 @@ var removeCmd = &cobra.Command{
 	Short: "Remove a file from valet.yaml",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		root, err := os.Getwd()
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		root, err := config.FindRoot(cwd)
 		if err != nil {
 			return err
 		}

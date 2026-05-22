@@ -13,7 +13,11 @@ var listCmd = &cobra.Command{
 	Short: "Show configured files and coverage per package",
 	Long:  "Lists all files configured in valet.yaml and their coverage across packages.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		root, err := os.Getwd()
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		root, err := config.FindRoot(cwd)
 		if err != nil {
 			return err
 		}
