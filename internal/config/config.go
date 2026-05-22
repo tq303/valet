@@ -11,6 +11,8 @@ const Filename = "valet.yaml"
 
 type Rule struct {
 	Repo      string   `yaml:"repo,omitempty"`
+	Archive   bool     `yaml:"archive,omitempty"`
+	Extract   []string `yaml:"extract,omitempty"`
 	Dest      string   `yaml:"dest,omitempty"`
 	Files     []string `yaml:"files"`
 	Link      bool     `yaml:"link,omitempty"`

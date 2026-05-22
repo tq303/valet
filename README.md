@@ -2,11 +2,9 @@
 
 ![version](https://img.shields.io/github/v/release/tq303/valet) ![build](https://github.com/tq303/valet/actions/workflows/release.yml/badge.svg) ![language](https://img.shields.io/badge/built%20with-Go-00ADD8) ![license](https://img.shields.io/badge/license-none-lightgrey)
 
-Manage and sync files across locations. 
+Manage and sync files across locations.
 
-Add any file, URL or repo location once or cache to local file.
-
-Define your files and locations in `valet.yaml`, run `valet sync` to keep everything in step.
+Add any file, URL, git repo, or release archive once. Define locations in `valet.yaml`, run `valet sync` to keep everything in step.
 
 ---
 
@@ -16,7 +14,6 @@ Define your files and locations in `valet.yaml`, run `valet sync` to keep everyt
 ```bash
 curl -L https://github.com/tq303/valet/releases/latest/download/valet-darwin-arm64 -o /usr/local/bin/valet && chmod +x /usr/local/bin/valet
 ```
-
 
 **Linux**
 ```bash
@@ -51,13 +48,13 @@ Use "valet [command] --help" for more information about a command.
 
 ```bash
 # Add a file — prompts for locations and dest folder, creates valet.yaml if needed
-valet add .eslintrc.js
+valet add config.js
 
 # Sync — copies the file to all configured locations
 valet sync
 
 # Made a change in one of the locations? Promote it as the new source
-valet sync packages/auth/.eslintrc.js
+valet sync packages/auth/config.js
 ```
 
 ---
@@ -66,73 +63,9 @@ valet sync packages/auth/.eslintrc.js
 
 Here are some `valet.yaml` examples for common scenarios.
 
-### AI rules for a monorepo
+### Shared config across a monorepo
 
-Keep Claude Code and Cursor rules consistent across every package:
-
-```yaml
-version: 1
-rules:
-  - dest: .claude
-    files:
-      - CLAUDE.md
-    locations:
-      - packages/auth
-      - packages/api
-  - dest: .cursor/rules
-    files:
-      - api-standards.mdc
-    locations:
-      - packages/auth
-      - packages/api
-```
-
-> Use `dest` when multiple locations share the same subfolder — it saves repeating the path.
-
-### Dotfiles / rig
-
-Symlink your config folders and dotfiles from a single rig repo. On Windows, `link: true` falls back to copy:
-
-```yaml
-version: 1
-rules:
-  - link: true
-    files:
-      - nvim
-      - ghostty
-    locations:
-      - ~/.config
-  - link: true
-    files:
-      - claude/CLAUDE.md
-    locations:
-      - ~/.claude
-  - link: true
-    files:
-      - .zshsource
-    locations:
-      - ~/
-```
-
-### Files from a git repo
-
-Track files or folders from any git repo as a source. On `valet sync`, the repo is cloned to `/tmp/valet/repos/` and kept up to date — folder structure and internal references are preserved.
-
-```yaml
-version: 1
-rules:
-  - repo: https://github.com/valyuAI/skills
-    files:
-      - valyu-search/valyu-best-practices
-    locations:
-      - ~/.claude/commands
-```
-
----
-
-### Shared tooling config across a monorepo
-
-Keep ESLint, Prettier, and TypeScript config consistent across every package:
+Keep linting, formatting, and TypeScript config consistent across every package:
 
 ```yaml
 version: 1
@@ -145,4 +78,71 @@ rules:
       - packages/auth
       - packages/api
       - packages/ui
+```
+
+### AI agent rules
+
+Keep AI editor rules consistent across every package, using `dest` to place them in the right subfolder:
+
+```yaml
+version: 1
+rules:
+  - dest: .agent/rules
+    files:
+      - coding-standards.md
+      - api-conventions.md
+    locations:
+      - packages/auth
+      - packages/api
+```
+
+### Dotfiles
+
+Symlink config folders and dotfiles from a single source. On Windows, `link: true` falls back to copy:
+
+```yaml
+version: 1
+rules:
+  - link: true
+    files:
+      - editor
+      - terminal
+    locations:
+      - ~/.config
+  - link: true
+    files:
+      - .shellrc
+    locations:
+      - ~/
+```
+
+### Files from a git repo
+
+Track files or folders from any git repo. On `valet sync`, the repo is cloned to `/tmp/valet/repos/` and kept up to date — folder structure and internal references are preserved:
+
+```yaml
+version: 1
+rules:
+  - repo: https://github.com/your-org/shared-configs
+    files:
+      - agent-skills/
+      - ci-templates/
+    locations:
+      - ~/.config/agent
+```
+
+### Binaries from a release archive
+
+Pull a specific binary out of a GitHub release tarball or zip. Supports `.tar.gz`, `.tar.xz`, `.tar.bz2`, and `.zip`. The archive is cached locally and only re-downloaded when forced:
+
+```yaml
+version: 1
+rules:
+  - files:
+      - https://github.com/your-org/tool/releases/download/v1.0.0/tool-v1.0.0.tar.gz
+    archive: true
+    extract:
+      - tool
+    locations:
+      - ~/bin
 ```

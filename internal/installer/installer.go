@@ -37,6 +37,10 @@ func FileName(file string) string {
 
 // SyncRule syncs all files in a rule into the given locations.
 func SyncRule(root string, rule config.Rule, locations []string, dryRun, force bool) ([]Result, error) {
+	if rule.Archive {
+		return syncArchiveRule(root, rule, locations, dryRun, force)
+	}
+
 	fileRoot := root
 	if rule.Repo != "" && !dryRun {
 		cacheDir, err := EnsureRepo(rule.Repo)
@@ -97,6 +101,47 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun, force b
 				src := ResolvePath(fileRoot, file)
 				if err := copyAny(src, dest); err != nil {
 					return nil, fmt.Errorf("failed to sync %s to %s: %w", file, dest, err)
+				}
+			}
+		}
+	}
+	return results, nil
+}
+
+func syncArchiveRule(root string, rule config.Rule, locations []string, dryRun, force bool) ([]Result, error) {
+	var results []Result
+	for _, file := range rule.Files {
+		var cacheDir string
+		if !dryRun {
+			var err error
+			cacheDir, err = EnsureArchive(file, rule.Extract, force)
+			if err != nil {
+				return nil, fmt.Errorf("failed to extract %s: %w", file, err)
+			}
+		}
+		for _, extract := range rule.Extract {
+			name := filepath.Base(extract)
+			for _, loc := range locations {
+				destDir := ResolvePath(root, loc)
+				if rule.Dest != "" {
+					destDir = filepath.Join(destDir, rule.Dest)
+				}
+				dest := filepath.Join(destDir, name)
+
+				changed := true
+				if !dryRun && !force {
+					src := filepath.Join(cacheDir, name)
+					changed = !upToDate(src, dest)
+				}
+
+				results = append(results, Result{Package: loc, File: extract, Dest: dest, Changed: changed})
+				if dryRun || !changed {
+					continue
+				}
+
+				src := filepath.Join(cacheDir, name)
+				if err := CopyFile(src, dest); err != nil {
+					return nil, fmt.Errorf("failed to copy %s to %s: %w", name, dest, err)
 				}
 			}
 		}

@@ -79,6 +79,10 @@ var addCmd = &cobra.Command{
 			return addFromRepo(root, cfg, file)
 		}
 
+		if installer.IsArchiveURL(file) {
+			return addFromArchive(root, cfg, file)
+		}
+
 		isURL := installer.IsURL(file)
 		filename := installer.FileName(file)
 		dir := ""
@@ -475,6 +479,81 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 	fmt.Printf("\nAdded %s:\n\n", filename)
 	for _, r := range results {
 		fmt.Printf("  %s → %s\n", r.Package, r.Dest)
+	}
+	return nil
+}
+
+func addFromArchive(root string, cfg *config.Config, archiveURL string) error {
+	var extractInput string
+	if err := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("File(s) to extract from archive (space-separated)").
+				Placeholder("gifski").
+				Value(&extractInput),
+		),
+	).Run(); err != nil {
+		return err
+	}
+	if extractInput == "" {
+		fmt.Println("No files specified, nothing to do.")
+		return nil
+	}
+	extractPaths := strings.Fields(extractInput)
+
+	var loc, dest string
+	if err := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Location to sync to").
+				Placeholder("~/bin").
+				Value(&loc),
+			huh.NewInput().
+				Title("Destination folder in each location (leave blank for root)").
+				Value(&dest),
+		),
+	).Run(); err != nil {
+		return err
+	}
+	if loc == "" {
+		fmt.Println("No location entered, nothing to do.")
+		return nil
+	}
+
+	locs, err := promptAdditionalLocations([]string{loc})
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Downloading and extracting %s...\n", archiveURL)
+	if _, err := installer.EnsureArchive(archiveURL, extractPaths, false); err != nil {
+		return fmt.Errorf("failed to extract archive: %w", err)
+	}
+
+	rule := config.Rule{
+		Archive:   true,
+		Extract:   extractPaths,
+		Files:     []string{archiveURL},
+		Dest:      dest,
+		Locations: locs,
+	}
+	cfg.Rules = append(cfg.Rules, rule)
+	if err := config.Save(root, cfg); err != nil {
+		return err
+	}
+
+	results, err := installer.SyncRule(root, rule, locs, false, true)
+	if err != nil {
+		return err
+	}
+	for _, extractPath := range extractPaths {
+		name := filepath.Base(extractPath)
+		fmt.Printf("\nAdded %s:\n\n", name)
+		for _, r := range results {
+			if filepath.Base(r.File) == name {
+				fmt.Printf("  %s → %s\n", r.Package, r.Dest)
+			}
+		}
 	}
 	return nil
 }
