@@ -25,43 +25,82 @@ Or build from source:
 make install
 ```
 
-## Usage
+---
+
+## Commands
 
 ```
-Valet manages and syncs files across locations. Add any file, URL or repo location once or cache to local file.
-
-Usage:
-  val [command]
-
-Available Commands:
-  add         Add a file to be synced across locations
-  list        Show configured files and coverage per package
-  remove      Remove a file from valet.yaml
-  sync        Sync all configured files into their locations
-
-Use "val [command] --help" for more information about a command.
+val add <file>       Add a file, URL, git repo or archive — prompts for locations
+val sync             Sync all configured files into their locations
+val list             Show file coverage across all locations
+val remove <file>    Remove a file from valet.yaml
 ```
+
+| Flag | Command | Description |
+|---|---|---|
+| `-f` | sync | Force overwrite even if up to date |
+| `-d` | sync | Dry run — preview changes without writing |
+| `--platform <tag>` | sync, list | Filter to rules matching the platform tag |
+| `-l <path>` | add | Location (skips prompt, repeatable) |
+| `--dest <folder>` | add | Destination subfolder within each location |
+| `-i` | add | Sync once without writing to `valet.yaml` |
 
 ---
 
-## Bootstrap flow
+## Dotfiles across machines
+
+The most common use case — symlink config folders from a single source repo and sync them across mac, ubuntu desktop, and servers. Each machine passes its own `--platform` tag; rules without a `platforms` field apply everywhere.
+
+```yaml
+version: 1
+rules:
+  - files:
+      - nvim
+      - tmux
+    link: true
+    locations:
+      - ~/.config
+
+  - files:
+      - ghostty
+    link: true
+    platforms:
+      - mac
+      - ubuntu
+    locations:
+      - ~/.config
+
+  - files:
+      - .zshrc
+      - .zshsource
+    link: true
+    locations:
+      - ~/
+```
 
 ```bash
-# Add a file — prompts for locations and dest folder, creates valet.yaml if needed
-val add config.js
+# mac or ubuntu desktop — syncs everything including ghostty
+val sync --platform mac
 
-# Sync — copies the file to all configured locations
-val sync
+# headless server — ghostty rule is skipped
+val sync --platform server
+```
 
-# Made a change in one of the locations? Promote it as the new source
-val sync packages/auth/config.js
+`val list` shows the full picture with a PLATFORM column so you always know what applies where:
+
+```
+FILE                           LOCATION             PLATFORM             STATUS
+----                           --------             --------             ------
+nvim                           ~/.config            -                    ok
+tmux                           ~/.config            -                    ok
+ghostty                        ~/.config            mac,ubuntu           ok
+.zshrc                         ~/                   -                    ok
+.zshsource                     ~/                   -                    ok
 ```
 
 ---
 
-## Examples
-
-Here are some `valet.yaml` examples for common scenarios.
+## More examples
 
 ### Shared config across a monorepo
 
@@ -87,38 +126,18 @@ Keep AI editor rules consistent across every package, using `dest` to place them
 ```yaml
 version: 1
 rules:
-  - dest: .agent/rules
+  - dest: .claude
     files:
-      - coding-standards.md
-      - api-conventions.md
+      - CLAUDE.md
     locations:
       - packages/auth
       - packages/api
-```
-
-### Dotfiles
-
-Symlink config folders and dotfiles from a single source. On Windows, `link: true` falls back to copy:
-
-```yaml
-version: 1
-rules:
-  - link: true
-    files:
-      - editor
-      - terminal
-    locations:
-      - ~/.config
-  - link: true
-    files:
-      - .shellrc
-    locations:
-      - ~/
+      - packages/ui
 ```
 
 ### Files from a git repo
 
-Track files or folders from any git repo. On `val sync`, the repo is cloned to `/tmp/valet/repos/` and kept up to date — folder structure and internal references are preserved:
+Track files or folders from any git repo. On `val sync`, the repo is cloned to `/tmp/valet/repos/` and kept up to date:
 
 ```yaml
 version: 1
@@ -131,41 +150,9 @@ rules:
       - ~/.config/agent
 ```
 
-### Platform-specific rules
-
-Restrict rules to specific platforms using the `platforms` field. Pass `--platform <tag>` to `val sync` and `val list` — rules with a matching tag (or no tag) are applied, others are skipped.
-
-Useful for dotfile repos shared across machines where some tools aren't installed everywhere:
-
-```yaml
-version: 1
-rules:
-  - files:
-      - ghostty
-    platforms:
-      - mac
-      - ubuntu
-    locations:
-      - ~/.config
-  - files:
-      - .zshrc
-    locations:
-      - ~/
-```
-
-```bash
-# on mac or ubuntu desktop
-val sync --platform mac
-
-# on a headless server — ghostty rule is skipped
-val sync --platform server
-```
-
----
-
 ### Binaries from a release archive
 
-Pull a specific binary out of a GitHub release tarball or zip. Supports `.tar.gz`, `.tar.xz`, `.tar.bz2`, and `.zip`. The archive is cached locally and only re-downloaded when forced:
+Pull a specific binary out of a GitHub release tarball or zip. Supports `.tar.gz`, `.tar.xz`, `.tar.bz2`, and `.zip`. Cached locally and only re-downloaded when forced:
 
 ```yaml
 version: 1
