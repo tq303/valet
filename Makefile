@@ -1,4 +1,4 @@
-DEST := $(HOME)/.local/bin/val
+DEST := $(HOME)/go/bin/val
 
 .PHONY: install build test
 

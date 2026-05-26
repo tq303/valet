@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/tq303/valet/internal/config"
 	"github.com/tq303/valet/internal/installer"
@@ -31,13 +33,17 @@ var listCmd = &cobra.Command{
 			return nil
 		}
 
-		fmt.Printf("%-30s %-20s %s\n", "FILE", "LOCATION", "STATUS")
-		fmt.Printf("%-30s %-20s %s\n", "----", "-------", "------")
+		fmt.Printf("%-30s %-20s %-20s %s\n", "FILE", "LOCATION", "PLATFORM", "STATUS")
+		fmt.Printf("%-30s %-20s %-20s %s\n", "----", "--------", "--------", "------")
 
 		exitCode := 0
 		for _, rule := range cfg.Rules {
 			if !installer.MatchesPlatform(rule, listPlatform) {
 				continue
+			}
+			platform := "-"
+			if len(rule.Platforms) > 0 {
+				platform = strings.Join(rule.Platforms, ",")
 			}
 			results, err := installer.SyncRule(root, rule, rule.Locations, true, false)
 			if err != nil {
@@ -45,10 +51,10 @@ var listCmd = &cobra.Command{
 			}
 			for _, r := range results {
 				if _, err := os.Stat(r.Dest); os.IsNotExist(err) {
-					fmt.Printf("%-30s %-20s MISSING\n", installer.FileName(r.File), r.Package)
+					fmt.Printf("%-30s %-20s %-20s MISSING\n", installer.FileName(r.File), r.Package, platform)
 					exitCode = 1
 				} else {
-					fmt.Printf("%-30s %-20s ok\n", installer.FileName(r.File), r.Package)
+					fmt.Printf("%-30s %-20s %-20s ok\n", installer.FileName(r.File), r.Package, platform)
 				}
 			}
 		}
