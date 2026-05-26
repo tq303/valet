@@ -93,6 +93,12 @@ rules:
 - Allows running valet from any subdirectory of the project root
 - If no config is found, fall back to current directory (existing behaviour for `valet add` / first-time init)
 
+### Phase 10 — Platform Filtering ✅
+- Rules can declare `platforms: [darwin, linux, windows]` to restrict syncing to specific OSes
+- `valet sync` and `valet list` skip rules whose platforms list excludes the current OS
+- Omitting `platforms` preserves existing behaviour (rule applies everywhere)
+- `valet add --platform darwin` (repeatable) sets the platform filter on a new rule
+
 ## Non-Goals (MVP)
 - No monorepo auto-detection
 - No preset system (use `valet.yaml` directly)

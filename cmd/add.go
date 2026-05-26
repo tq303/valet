@@ -15,6 +15,7 @@ import (
 var once bool
 var locationFlags []string
 var destFlag string
+var platformFlags []string
 
 var addCmd = &cobra.Command{
 	Use:   "add [files...]",
@@ -40,7 +41,7 @@ var addCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			return addWithFlags(root, cfg, args, locationFlags, destFlag, once)
+			return addWithFlags(root, cfg, args, locationFlags, destFlag, platformFlags, once)
 		}
 
 		// Collect single file (prompt if not provided)
@@ -239,6 +240,7 @@ var addCmd = &cobra.Command{
 			Dest:      dest,
 			Files:     []string{file},
 			Locations: locs,
+			Platforms: platformFlags,
 		}
 		cfg.Rules = append(cfg.Rules, rule)
 		if err := config.Save(root, cfg); err != nil {
@@ -257,7 +259,7 @@ var addCmd = &cobra.Command{
 	},
 }
 
-func addWithFlags(root string, cfg *config.Config, files, locs []string, dest string, ignoreConfig bool) error {
+func addWithFlags(root string, cfg *config.Config, files, locs []string, dest string, platforms []string, ignoreConfig bool) error {
 	for _, f := range files {
 		if !installer.IsURL(f) && !installer.IsGitRepo(f) {
 			src := installer.ResolvePath(root, f)
@@ -267,7 +269,7 @@ func addWithFlags(root string, cfg *config.Config, files, locs []string, dest st
 		}
 	}
 
-	rule := config.Rule{Dest: dest, Files: files, Locations: locs}
+	rule := config.Rule{Dest: dest, Files: files, Locations: locs, Platforms: platforms}
 
 	if !ignoreConfig {
 		for i, r := range cfg.Rules {
@@ -334,7 +336,7 @@ func addMultipleFiles(root string, cfg *config.Config, files []string, ignoreCon
 		return err
 	}
 
-	return addWithFlags(root, cfg, files, locs, dest, ignoreConfig)
+	return addWithFlags(root, cfg, files, locs, dest, platformFlags, ignoreConfig)
 }
 
 func locationsMatch(a, b []string) bool {
@@ -678,5 +680,6 @@ func init() {
 	addCmd.Flags().BoolVarP(&once, "ignore", "i", false, "Sync without adding to valet.yaml")
 	addCmd.Flags().StringArrayVarP(&locationFlags, "location", "l", nil, "Location to sync to (repeatable)")
 	addCmd.Flags().StringVar(&destFlag, "dest", "", "Destination folder within each location")
+	addCmd.Flags().StringArrayVar(&platformFlags, "platform", nil, "Restrict rule to platform(s): darwin, linux, windows (repeatable)")
 	rootCmd.AddCommand(addCmd)
 }

@@ -12,6 +12,7 @@ import (
 
 var dryRun bool
 var force bool
+var syncPlatform string
 
 var syncCmd = &cobra.Command{
 	Use:   "sync [file]",
@@ -41,7 +42,7 @@ var syncCmd = &cobra.Command{
 			return syncFromPath(root, cfg, args[0], dryRun)
 		}
 
-		results, err := installer.SyncAll(root, cfg, dryRun, force)
+		results, err := installer.SyncAll(root, cfg, syncPlatform, dryRun, force)
 		if err != nil {
 			return err
 		}
@@ -112,5 +113,6 @@ func syncFromPath(root string, cfg *config.Config, path string, dryRun bool) err
 func init() {
 	syncCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Preview changes without applying them")
 	syncCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite destinations even if already up to date")
+	syncCmd.Flags().StringVar(&syncPlatform, "platform", "", "Only sync rules matching this platform tag (e.g. mac, ubuntu, server)")
 	rootCmd.AddCommand(syncCmd)
 }

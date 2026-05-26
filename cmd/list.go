@@ -36,6 +36,9 @@ var listCmd = &cobra.Command{
 
 		exitCode := 0
 		for _, rule := range cfg.Rules {
+			if !installer.MatchesPlatform(rule, listPlatform) {
+				continue
+			}
 			results, err := installer.SyncRule(root, rule, rule.Locations, true, false)
 			if err != nil {
 				return err
@@ -58,6 +61,9 @@ var listCmd = &cobra.Command{
 	},
 }
 
+var listPlatform string
+
 func init() {
+	listCmd.Flags().StringVar(&listPlatform, "platform", "", "Only show rules matching this platform tag")
 	rootCmd.AddCommand(listCmd)
 }

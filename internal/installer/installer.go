@@ -21,6 +21,20 @@ type Result struct {
 	Changed bool
 }
 
+// MatchesPlatform reports whether a rule applies for the given platform tag.
+// An empty platform (flag not set) or a rule with no platforms always matches.
+func MatchesPlatform(rule config.Rule, platform string) bool {
+	if platform == "" || len(rule.Platforms) == 0 {
+		return true
+	}
+	for _, p := range rule.Platforms {
+		if p == platform {
+			return true
+		}
+	}
+	return false
+}
+
 func IsURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
@@ -150,9 +164,13 @@ func syncArchiveRule(root string, rule config.Rule, locations []string, dryRun, 
 }
 
 // SyncAll applies every rule in cfg to its own location list.
-func SyncAll(root string, cfg *config.Config, dryRun, force bool) ([]Result, error) {
+// If platform is non-empty, rules with a platforms list that excludes it are skipped.
+func SyncAll(root string, cfg *config.Config, platform string, dryRun, force bool) ([]Result, error) {
 	var all []Result
 	for _, rule := range cfg.Rules {
+		if !MatchesPlatform(rule, platform) {
+			continue
+		}
 		results, err := SyncRule(root, rule, rule.Locations, dryRun, force)
 		if err != nil {
 			return nil, err

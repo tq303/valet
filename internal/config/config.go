@@ -17,6 +17,7 @@ type Rule struct {
 	Files     []string `yaml:"files"`
 	Link      bool     `yaml:"link,omitempty"`
 	Locations []string `yaml:"locations"`
+	Platforms []string `yaml:"platforms,omitempty"`
 }
 
 type Config struct {
