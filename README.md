@@ -20,9 +20,9 @@ curl -L https://github.com/tq303/valet/releases/latest/download/val-darwin-arm64
 curl -L https://github.com/tq303/valet/releases/latest/download/val-linux-amd64 -o /usr/local/bin/val && chmod +x /usr/local/bin/val
 ```
 
-Or with Go:
+Or build from source:
 ```bash
-go install github.com/tq303/valet@latest
+make install
 ```
 
 ## Usage
@@ -130,6 +130,38 @@ rules:
     locations:
       - ~/.config/agent
 ```
+
+### Platform-specific rules
+
+Restrict rules to specific platforms using the `platforms` field. Pass `--platform <tag>` to `val sync` and `val list` — rules with a matching tag (or no tag) are applied, others are skipped.
+
+Useful for dotfile repos shared across machines where some tools aren't installed everywhere:
+
+```yaml
+version: 1
+rules:
+  - files:
+      - ghostty
+    platforms:
+      - mac
+      - ubuntu
+    locations:
+      - ~/.config
+  - files:
+      - .zshrc
+    locations:
+      - ~/
+```
+
+```bash
+# on mac or ubuntu desktop
+val sync --platform mac
+
+# on a headless server — ghostty rule is skipped
+val sync --platform server
+```
+
+---
 
 ### Binaries from a release archive
 
