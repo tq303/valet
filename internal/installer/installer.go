@@ -84,10 +84,13 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun, force b
 			}
 			dest := filepath.Join(destDir, name)
 
+			isLocal := !IsURL(file) && rule.Repo == "" && !rule.Archive
+			useSymlink := isLocal && !rule.Copy
+
 			changed := true
-			if !force && !IsURL(file) && rule.Repo == "" {
+			if !force && isLocal {
 				src := ResolvePath(fileRoot, file)
-				if rule.Link {
+				if useSymlink {
 					changed = !symlinkUpToDate(src, dest)
 				} else {
 					changed = !upToDate(src, dest)
@@ -106,7 +109,7 @@ func SyncRule(root string, rule config.Rule, locations []string, dryRun, force b
 				if err := writeFromURL(file, dest); err != nil {
 					return nil, fmt.Errorf("failed to fetch %s: %w", file, err)
 				}
-			} else if rule.Link {
+			} else if useSymlink {
 				src := ResolvePath(fileRoot, file)
 				if err := symlink(src, dest); err != nil {
 					return nil, fmt.Errorf("failed to symlink %s to %s: %w", file, dest, err)
@@ -289,6 +292,7 @@ func CopyFile(src, dest string) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		return err
 	}
+	os.Remove(dest)
 	in, err := os.Open(src)
 	if err != nil {
 		return err

@@ -70,7 +70,7 @@ func TestSyncAll(t *testing.T) {
 		Version: 1,
 		Rules:   []config.Rule{rule},
 	}
-	results, err := SyncAll(root, cfg, false, false)
+	results, err := SyncAll(root, cfg, "", false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

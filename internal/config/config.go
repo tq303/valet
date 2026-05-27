@@ -15,7 +15,7 @@ type Rule struct {
 	Extract   []string `yaml:"extract,omitempty"`
 	Dest      string   `yaml:"dest,omitempty"`
 	Files     []string `yaml:"files"`
-	Link      bool     `yaml:"link,omitempty"`
+	Copy      bool     `yaml:"copy,omitempty"`
 	Locations []string `yaml:"locations"`
 	Platforms []string `yaml:"platforms,omitempty"`
 }

@@ -1,7 +1,7 @@
 {
   "name": "@tq303/valet",
   "version": "0.9.2",
-  "description": "Sync config files across your monorepo",
+  "description": "Track, sync, and update files, repos, and binaries across any location",
   "main": "index.js",
   "bin": {
     "val": "index.js"
