@@ -1,19 +1,19 @@
 #!/bin/bash
 set -e
 
-CURRENT=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-NEXT=$(echo $CURRENT | awk -F. '{print $1"."$2"."$3+1}')
+CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+NEXT_TAG=$(echo $CURRENT_TAG | awk -F. '{print $1"."$2"."$3+1}')
 
-echo "Releasing $NEXT"
+echo "Releasing ${NEXT_TAG}"
 
-git tag $NEXT
-git push origin $NEXT
+git tag ${NEXT_TAG}
+git push origin ${NEXT_TAG}
 
 cd npm
-npm version ${NEXT#v} --no-git-tag-version
+npm version ${NEXT_TAG#v} --no-git-tag-version
 npm publish --access=public
 cd ..
 
 git add npm/package.json
-git commit -m "chore: release $NEXT"
+git commit -m "release: npm ${NEXT_TAG}"
 git push
