@@ -48,7 +48,11 @@ func FindRoot(cwd string) (string, error) {
 }
 
 func Load(root string) (*Config, error) {
-	data, err := os.ReadFile(filepath.Join(root, Filename))
+	return LoadFile(filepath.Join(root, Filename))
+}
+
+func LoadFile(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return &Config{Version: 1}, nil
 	}
@@ -63,9 +67,13 @@ func Load(root string) (*Config, error) {
 }
 
 func Save(root string, cfg *Config) error {
+	return SaveFile(filepath.Join(root, Filename), cfg)
+}
+
+func SaveFile(path string, cfg *Config) error {
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(root, Filename), data, 0644)
+	return os.WriteFile(path, data, 0644)
 }

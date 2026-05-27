@@ -4,23 +4,34 @@
 
 Manage and sync files across locations.
 
+Keeps a canonical source of truth for files that need to exist in multiple places, whether that's shared configs, prompt files, scripts, or tooling.
+
 Add any file, URL, git repo, or release archive once. Define locations in `valet.yaml`, run `val sync` to keep everything in step.
+
+- Explicit yaml config vs stow's convention-based approach — handles non-standard paths and platform conditions cleanly
+- Scales where stow doesn't — stow's simplicity is its ceiling
+- URL files and git repos in the same sync, not just dotfiles
+- Enterprise use case: keeping shared configs, CI templates, tooling in sync across a monorepo without drift
+- Single source of truth, one-command sync
 
 ---
 
 ## Install
 
 **macOS (Apple Silicon)**
+
 ```bash
 curl -L https://github.com/tq303/valet/releases/latest/download/val-darwin-arm64 -o /usr/local/bin/val && chmod +x /usr/local/bin/val
 ```
 
 **Linux**
+
 ```bash
 curl -L https://github.com/tq303/valet/releases/latest/download/val-linux-amd64 -o /usr/local/bin/val && chmod +x /usr/local/bin/val
 ```
 
 Or build from source:
+
 ```bash
 make install
 ```
@@ -36,14 +47,14 @@ val list             Show file coverage across all locations
 val remove <file>    Remove a file from valet.yaml
 ```
 
-| Flag | Command | Description |
-|---|---|---|
-| `-f` | sync | Force overwrite even if up to date |
-| `-d` | sync | Dry run — preview changes without writing |
-| `--platform <tag>` | sync, list | Filter to rules matching the platform tag |
-| `-l <path>` | add | Location (skips prompt, repeatable) |
-| `--dest <folder>` | add | Destination subfolder within each location |
-| `-i` | add | Sync once without writing to `valet.yaml` |
+| Flag               | Command    | Description                                |
+| ------------------ | ---------- | ------------------------------------------ |
+| `-f`               | sync       | Force overwrite even if up to date         |
+| `-d`               | sync       | Dry run — preview changes without writing  |
+| `--platform <tag>` | sync, list | Filter to rules matching the platform tag  |
+| `-l <path>`        | add        | Location (skips prompt, repeatable)        |
+| `--dest <folder>`  | add        | Destination subfolder within each location |
+| `-i`               | add        | Sync once without writing to `valet.yaml`  |
 
 ---
 

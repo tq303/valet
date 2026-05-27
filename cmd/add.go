@@ -23,11 +23,7 @@ var addCmd = &cobra.Command{
 	Long:  "Add any file or URL to be tracked and synced. If already tracked, promotes or extends it.",
 	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		root, err := config.FindRoot(cwd)
+		root, err := findRoot()
 		if err != nil {
 			return err
 		}
@@ -37,7 +33,7 @@ var addCmd = &cobra.Command{
 			if len(args) == 0 {
 				return fmt.Errorf("at least one file is required with --location")
 			}
-			cfg, err := config.Load(root)
+			cfg, err := loadConfig(root)
 			if err != nil {
 				return err
 			}
@@ -64,7 +60,7 @@ var addCmd = &cobra.Command{
 
 		// Multiple files without -l: prompt once, apply to all
 		if len(args) > 1 {
-			cfg, err := config.Load(root)
+			cfg, err := loadConfig(root)
 			if err != nil {
 				return err
 			}
@@ -75,7 +71,7 @@ var addCmd = &cobra.Command{
 			return addOnce(root, file)
 		}
 
-		cfg, err := config.Load(root)
+		cfg, err := loadConfig(root)
 		if err != nil {
 			return err
 		}
@@ -173,7 +169,7 @@ var addCmd = &cobra.Command{
 					return nil
 				}
 
-				if err := config.Save(root, cfg); err != nil {
+				if err := saveConfig(root, cfg); err != nil {
 					return err
 				}
 				results, err := installer.SyncRule(root, cfg.Rules[i], added, false, true)
@@ -220,7 +216,7 @@ var addCmd = &cobra.Command{
 			if rule.Dest == dest && len(rule.Locations) == 1 && rule.Locations[0] == loc {
 				cfg.Rules[i].Files = append(cfg.Rules[i].Files, file)
 				cfg.Rules[i].Locations = locs
-				if err := config.Save(root, cfg); err != nil {
+				if err := saveConfig(root, cfg); err != nil {
 					return err
 				}
 				results, err := installer.SyncRule(root, cfg.Rules[i], locs, false, true)
@@ -243,7 +239,7 @@ var addCmd = &cobra.Command{
 			Platforms: platformFlags,
 		}
 		cfg.Rules = append(cfg.Rules, rule)
-		if err := config.Save(root, cfg); err != nil {
+		if err := saveConfig(root, cfg); err != nil {
 			return err
 		}
 
@@ -275,7 +271,7 @@ func addWithFlags(root string, cfg *config.Config, files, locs []string, dest st
 		for i, r := range cfg.Rules {
 			if r.Dest == dest && locationsMatch(r.Locations, locs) {
 				cfg.Rules[i].Files = append(cfg.Rules[i].Files, files...)
-				if err := config.Save(root, cfg); err != nil {
+				if err := saveConfig(root, cfg); err != nil {
 					return err
 				}
 				rule = cfg.Rules[i]
@@ -284,7 +280,7 @@ func addWithFlags(root string, cfg *config.Config, files, locs []string, dest st
 		}
 		if len(rule.Files) == len(files) {
 			cfg.Rules = append(cfg.Rules, rule)
-			if err := config.Save(root, cfg); err != nil {
+			if err := saveConfig(root, cfg); err != nil {
 				return err
 			}
 		}
@@ -413,7 +409,7 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 				}
 			}
 			cfg.Rules[i].Locations = append(cfg.Rules[i].Locations, loc)
-			if err := config.Save(root, cfg); err != nil {
+			if err := saveConfig(root, cfg); err != nil {
 				return err
 			}
 			results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false, true)
@@ -453,7 +449,7 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 	for i, rule := range cfg.Rules {
 		if rule.Repo == repoURL && rule.Dest == dest && len(rule.Locations) == 1 && rule.Locations[0] == loc {
 			cfg.Rules[i].Files = append(cfg.Rules[i].Files, repoFile)
-			if err := config.Save(root, cfg); err != nil {
+			if err := saveConfig(root, cfg); err != nil {
 				return err
 			}
 			results, err := installer.SyncRule(root, cfg.Rules[i], []string{loc}, false, true)
@@ -475,7 +471,7 @@ func addFromRepo(root string, cfg *config.Config, repoURL string) error {
 		Locations: []string{loc},
 	}
 	cfg.Rules = append(cfg.Rules, rule)
-	if err := config.Save(root, cfg); err != nil {
+	if err := saveConfig(root, cfg); err != nil {
 		return err
 	}
 	results, err := installer.SyncRule(root, rule, []string{loc}, false, true)
@@ -544,7 +540,7 @@ func addFromArchive(root string, cfg *config.Config, archiveURL string) error {
 		Locations: locs,
 	}
 	cfg.Rules = append(cfg.Rules, rule)
-	if err := config.Save(root, cfg); err != nil {
+	if err := saveConfig(root, cfg); err != nil {
 		return err
 	}
 

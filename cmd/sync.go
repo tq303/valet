@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -20,16 +19,12 @@ var syncCmd = &cobra.Command{
 	Long:  "Reads valet.yaml and syncs every configured file into its target locations. Pass a file path to promote that version as the source before syncing.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		root, err := config.FindRoot(cwd)
+		root, err := findRoot()
 		if err != nil {
 			return err
 		}
 
-		cfg, err := config.Load(root)
+		cfg, err := loadConfig(root)
 		if err != nil {
 			return err
 		}

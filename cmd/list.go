@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tq303/valet/internal/config"
 	"github.com/tq303/valet/internal/installer"
 )
 
@@ -15,16 +14,12 @@ var listCmd = &cobra.Command{
 	Short: "Show configured files and coverage per package",
 	Long:  "Lists all files configured in valet.yaml and their coverage across packages.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		root, err := config.FindRoot(cwd)
+		root, err := findRoot()
 		if err != nil {
 			return err
 		}
 
-		cfg, err := config.Load(root)
+		cfg, err := loadConfig(root)
 		if err != nil {
 			return err
 		}
