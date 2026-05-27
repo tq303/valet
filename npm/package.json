@@ -1,0 +1,17 @@
+{
+  "name": "@tq303/valet",
+  "version": "0.0.1",
+  "description": "Sync config files across your monorepo",
+  "main": "index.js",
+  "bin": {
+    "val": "index.js"
+  },
+  "scripts": {
+    "postinstall": "node postinstall.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tq303/valet"
+  },
+  "license": "MIT"
+}

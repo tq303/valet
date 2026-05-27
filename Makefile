@@ -1,6 +1,6 @@
 DEST := $(HOME)/go/bin/val
 
-.PHONY: install build test
+.PHONY: install build test release
 
 install:
 	go build -o $(DEST) .
@@ -12,3 +12,6 @@ build:
 
 test:
 	go test ./...
+
+release:
+	@bash scripts/release.sh
