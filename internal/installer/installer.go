@@ -212,6 +212,7 @@ func upToDate(src, dest string) bool {
 
 // ResolvePath expands ~/ and resolves relative paths against root.
 func ResolvePath(root, path string) string {
+	path = os.ExpandEnv(path)
 	if strings.HasPrefix(path, "~/") {
 		home, _ := os.UserHomeDir()
 		return filepath.Join(home, path[2:])
